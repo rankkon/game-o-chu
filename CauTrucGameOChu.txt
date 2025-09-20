@@ -1,0 +1,130 @@
+Game ô chữ thi đấu đối kháng online
+-        Hệ thống có một server và nhiều client. Server lưu toàn bộ thông tin người chơi, từ điển từ vựng, ván đấu và bảng xếp hạng.
+-        Để chơi, người chơi login vào tài khoản của mình từ máy client (đăng ký nếu chưa có).
+-        Sau khi login thành công, giao diện hiển thị danh sách người chơi online gồm: tên, tổng số điểm hiện có, trạng thái (đang bận/đang chơi/đang rỗi).
+-        Muốn mời đấu, người chơi click vào tên đối thủ trong danh sách online.
+ Người bị mời có thể chấp nhận (OK) hoặc từ chối (Reject).
+-        Khi chấp nhận, 2 người chơi sẽ vào phòng đấu. Server chọn ngẫu nhiên 5 từ từ kho từ điển theo một chủ đề sẵn có để tạo một bảng ô chữ.
+-        Luật điền từ: Từ những chữ cái gợi ý có sẵn trong ô , người chơi cần hoàn thiện bảng ô chữ trong vòng 90s. Cả 2 đều bắt đầu cùng lúc và người chơi phải điền nhanh và chính xác nhất. Điểm được tính theo số ô chữ điền đúng.
+VD:   X_a_ -> XOAI
+    	C_ _ -> CAM
+-        Chấm điểm: 
+Điền đúng 1 ô: +1 điểm (Chỉ áp dụng cho điền đúng lần đầu tiên). Hoàn thành 1 từ hợp lệ: +bonus 2 điểm. 
+Điền sai: không cộng điểm và xóa ô chữ sai và người chơi có thể điền lại nhưng điền đúng sẽ không còn được +1 điểm nữa. 
+Nếu tổng điểm của hai người chơi bằng nhau, hệ thống sẽ so sánh thời gian ghi điểm cuối cùng. Người nào có lần ghi điểm cuối cùng sớm hơn (tức là nhanh hơn) sẽ được tính là chiến thắng.
+Nếu một người chơi bị mất kết nối giữa chừng, hệ thống vẫn giữ nguyên toàn bộ điểm số, số ô đúng, số từ đúng mà họ đã đạt được trước khi mất kết nối. Người còn lại vẫn có thể tiếp tục chơi bình thường cho tới hết game. Người chơi bị rớt mạng hoàn toàn có thể kết nối lại trong thời gian ván đấu chưa kết thúc.
+Chiến thắng ván đấu được cộng 100đ thua sẽ không được cộng điểm và điểm khởi đầu của mỗi người là 1000đ.
+-        Hiển thị realtime: Mỗi client luôn thấy lưới chung cập nhật theo thời gian thực. Mỗi bên có bảng điểm riêng, số ô đúng, số từ đúng và điểm của đối thủ.
+-        Sau mỗi ván chơi, server hiển thị thông báo chơi tiếp cho cả 2 người chơi, nếu cả hai người chơi đồng ý thì sẽ tạo ra một ván mới. Nếu một trong hai người từ chối thì ván chơi sẽ kết thúc.
+-        Kết quả các trận đấu được lưu vào server. Mỗi người chơi đều có thể vào xem bảng xếp hạng các người chơi trong toàn bộ hệ thống, theo lần lượt các tiêu chí xếp theo: tổng điểm (giảm dần) → tổng số trận thắng (giảm dần) → thời gian còn lại trung bình (giảm dần)
+
+ 
+Bảng phân chia công việc
+STT
+Họ và Tên
+Mã sinh viên
+Phân chia công việc
+1
+Cao Đức Việt
+B22DCCN894
+- Thiết kế cơ sở dữ liệu
+- Chức năng:
++ Xử lý hiển thị bảng xếp hạng điểm
++ Xử lý hiển thị thông số người chơi (danh sách online ở lobby), hồ sơ người chơi và lịch sử trận đấu
++ Xử lý chat trong ván đấu của game
+2
+Định Ngọc Hân
+B22DCCN282
+- Chức năng:
++ Xử lý mời đối thủ ở lobby, tìm kiếm trận đấu/ ghép đối thủ
++ Xử lý thuật toán chơi game, kiểm tra từ hợp lệ (server lưu 5 từ đã chọn để kiểm tra từ, so sánh từng chữ cái để chấm điểm)
++ Xử lý kết thúc trận đấu và cập nhật kết quả
+3
+Nguyễn Công Trung
+B22DCCN870
+- Chức năng:
++ Xử lý xem trận đấu từ server (admin xem 2 người chơi)
++ Xử lý các chức năng của server (tạo phòng, đồng bộ,...)
++ Xác thực người dùng
++ Xử lý reconnect khi rớt mạng (khi đăng nhập lại thì auto vào lại trận đấu nếu trận đấu chưa kết thúc - dùng redis để lưu trạng thái từng người chơi)
+
+
+
+Cấu trúc dự án:
+game-o-chu/
+├── server/                                # Code server chính
+│   ├── src/
+│   │   ├── controller/                    # Điều phối request/response (socket handler)
+│   │   │   ├── ClientHandler.java         # Xử lý kết nối 1 client (thread riêng)
+│   │   │   ├── ServerMain.java            # Entry point, listen socket, tạo ClientHandler
+│   │   │   ├── InviteController.java      # Luồng mời/nhận đấu
+│   │   │   ├── MatchController.java       # Luồng điều khiển trận đấu (start, update, end)
+│   │   │   └── ChatController.java        # Điều khiển chat trong game
+│   │   │
+│   │   ├── service/                       # Xử lý nghiệp vụ (logic)
+│   │   │   ├── AuthService.java           # Đăng nhập / đăng ký / xác thực
+│   │   │   ├── UserService.java           # Quản lý user online, trạng thái
+│   │   │   ├── MatchService.java          # Tạo phòng, chọn từ, tính điểm, timer
+│   │   │   ├── DictionaryService.java     # Load từ điển, tìm từ theo chủ đề
+│   │   │   └── RankingService.java        # Tính toán bảng xếp hạng
+│   │   │
+│   │   ├── dao/                           # Data Access Object (MySQL)
+│   │   │   ├── UserDAO.java               # CRUD user, update điểm, lịch sử
+│   │   │   ├── MatchDAO.java              # Lưu trận đấu, kết quả
+│   │   │   ├── DictionaryDAO.java         # Lấy danh sách từ vựng
+│   │   │   └── RankingDAO.java            # Query bảng xếp hạng
+│   │   │
+│   │   ├── model/                         # Lớp mô hình dữ liệu
+│   │   │   ├── User.java                  # Thông tin user (id, name, avatar, score,…)
+│   │   │   ├── Match.java                 # Trận đấu (board, 2 players, timer,…)
+│   │   │   ├── Word.java                  # Từ vựng trong board
+│   │   │   └── Event.java                 # Log sự kiện trong trận
+│   │   │
+│   │   ├── util/                          # Tiện ích chung
+│   │   │   ├── DBConnection.java          # Kết nối MySQL (singleton/pool)
+│   │   │   ├── JsonUtil.java              # Parse JSON (dùng Gson/Jackson)
+│   │   │
+│   │   └── resources/
+│   │       ├── config.properties          # Thông tin DB (url, user, pass)
+│   │       └── dictionary.txt             # Dữ liệu từ điển mẫu
+│   │
+│   └── pom.xml                            # Maven config server
+│
+├── client/                                # Code client (Swing)
+│   ├── src/
+│   │   ├── view/                          # UI (Swing Frames & Panels)
+│   │   │   ├── LoginFrame.java            # Màn hình đăng nhập/đăng ký
+│   │   │   ├── LobbyFrame.java            # Màn hình lobby: danh sách online, invite, match
+│   │   │   ├── MatchFrame.java            # Màn hình trận đấu (board, timer, điểm, chat)
+│   │   │   ├── RankingFrame.java          # Hiển thị bảng xếp hạng
+│   │   │   ├── ProfileDialog.java         # Hồ sơ user
+│   │   │   └── HistoryDialog.java         # Lịch sử trận đấu
+│   │   │
+│   │   ├── controller/                    # Giao tiếp socket + điều phối UI
+│   │   │   ├── ClientMain.java            # Entry point client
+│   │   │   ├── NetworkClient.java         # Kết nối socket tới server
+│   │   │   ├── MessageListener.java       # Lắng nghe message từ server (thread)
+│   │   │   └── UIController.java          # Cập nhật UI dựa trên event server
+│   │   │
+│   │   ├── model/                         # Mô hình phía client
+│   │   │   ├── User.java                  # Thông tin user (local copy)
+│   │   │   ├── Match.java                 # Trạng thái trận đấu local (board, timer,…)
+│   │   │   └── Message.java               # Message JSON (request/response)
+│   │   │
+│   │   ├── util/
+│   │   │   └── JsonUtil.java              # Parse JSON (client side)
+│   │   │
+│   │   └── resources/
+│   │       ├── icons/                     # Ảnh avatar, icon UI
+│   │       └── ui.properties              # Cấu hình theme UI
+│   │
+│   └── pom.xml                            # Maven config client
+│
+├── docs/                                  # Tài liệu nhóm
+│   ├── design-spec.md                     # Đặc tả hệ thống (mô tả đã viết)
+│   ├── db-schema.sql                      # Script tạo CSDL
+│   ├── sequence-diagrams/                 # Sơ đồ tuần tự (invite, match, end,…)
+│   └── task-division.md                   # Bảng phân công công việc
+│
+└── README.md
+
