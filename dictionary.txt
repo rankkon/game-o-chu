@@ -1,0 +1,169 @@
+-Hoa quả:
+TAO → táo
+CAM → cam
+CHUOI → chuối
+XOAI → xoài
+LE → lê
+MAN → mận
+MIT → mít
+DUA → dừa
+DUAHAU → dưa hấu
+DUALE → dưa lê
+DUAGANG → dưa gang
+NA → na
+MANGCUT → măng cụt
+BUOI → bưởi
+NHO → nho
+DAO → đào
+KHE → khế
+QUYT → quýt
+CHANH → chanh
+CHANHLEO → chanh leo
+LUU → lựu
+HONG → hồng
+SAURIENG → sầu riêng
+VAI → vải
+NHAN → nhãn
+MANGCAU → mãng cầu
+MANGCAUXIEM → mãng cầu xiêm
+DAUTAY → dâu tây
+VIETQUAT → việt quất 
+KIWI → kiwi
+THANHLONG → thanh long
+SUNG → sung
+CACAO → ca cao
+ME → me
+BO → bơ 
+CHOMCHOM → chôm chôm
+CHERRY → cherry
+MAMXOI → mâm xôi
+PHUCBONTU → phúc bồn tử
+OI → ổi
+
+-Nghề nghiệp:
+BACSI → bác sĩ
+YTA → y tá
+DUOCSI → dược sĩ
+GIAOVIEN → giáo viên
+SINHVIEN → sinh viên
+HOCSINH → học sinh
+KYSU → kỹ sư
+LAPTRINHVIEN → lập trình viên
+PHONGVIEN → phóng viên
+NHABAO → nhà báo
+PHATTHANHVIEN → phát thanh viên
+DIENVIEN → diễn viên
+DAODIEN → đạo diễn
+CASI → ca sĩ
+NHACSI → nhạc sĩ
+HOASI → hoạ sĩ
+KIENTRUCSU → kiến trúc sư
+PHICONG → phi công
+TIEPVIEN → tiếp viên
+TAIXE → tài xế
+GIAOHANG → giao hàng
+CANHSAT → cảnh sát
+BODOI → bộ đội
+LINHCUUHOA → lính cứu hoả
+BAOVE → bảo vệ
+LUATSU → luật sư
+KETOAN → kế toán
+GIAMDOC → giám đốc
+LETAN → lễ tân
+THUKY → thư ký
+THOMAY → thợ may
+THODIEN → thợ điện
+THOHO → thợ hồ
+THOSUAXE → thợ sửa xe
+THOCATTOC → thợ cắt tóc
+NONGDAN → nông dân
+THOMO → thợ mỏ
+KYTHUATVIEN → kỹ thuật viên
+BANHANG → nhân viên bán hàng
+VANDONGVIEN → vận động viên
+HUANLUYENVIEN → huấn luyện viên
+GAMETHU → game thủ
+STREAMER → streamer
+YOUTUBER → youtuber
+TIKTOKER → tiktoker
+
+-Động vật:
+CHO → chó
+MEO → mèo
+CHIM → chim
+GA → gà
+VIT → vịt
+NGAN → ngan
+NGONG → ngỗng
+TRau → trâu
+BO → bò
+DE → dê
+CUU → cừu
+LON → lợn 
+NGUA → ngựa
+HO → hổ
+SUTU → sư tử
+BAO → báo
+CAO → cáo
+GAU → gấu
+GAUTRUC → gấu trúc
+KHI → khỉ
+VOI → voi
+TEGIAC → tê giác
+HAMA → hà mã
+HUOUCAOCO → hươu cao cổ
+HUOU → hươu
+NAI → nai
+CHOSOI → chó sói
+MEORUNG → mèo rừng
+RAN → rắn
+RANHOMANG → rắn hổ mang
+CAMAP → cá mập
+CAVOI → cá voi
+CAHEO → cá heo
+CANGUA → cá ngựa
+CATRE → cá trê
+CALOC → cá lóc
+CACHINH → cá chình
+CAHOI → cá hồi
+CANGU → cá ngừ
+CASAU → cá sấu
+TOM → tôm
+CUA → cua
+OC → ốc
+OCSEN → ốc sên
+NGAO → ngao
+SO → sò
+NGHEU → nghêu
+SUA → sứa
+BACHTUOC → bạch tuộc
+MUC → mực
+ONG → ong
+BUOM → bướm
+MUOI → muỗi
+KIEN → kiến
+GIAN → gián
+VESAU → ve sầu
+NHEN → nhện
+BOCANHCUNG → bọ cánh cứng
+BOHUNG → bọ hung
+BONGUA → bọ ngựa
+ECH → ếch
+NHAI → nhái
+COC → cóc
+BABA → ba ba
+RUA → rùa
+RUABIEN → rùa biển
+DADIEU → đà điểu
+CONG → công 
+CHIMSE → chim sẻ
+CHIMBOCAU → chim bồ câu
+CHIMCANHCUT → chim cánh cụt 
+CHIMHONGHAC → chim hồng hạc 
+CHIMUNG → chim ưng
+CHIMHAIHAU → chim hải âu
+CHIMDAIBANG → đại bàng
+CHIMDIEUHAU → diều hâu
+CHAUCHAU → châu chấu
+DEMEN → dế mèn
+
