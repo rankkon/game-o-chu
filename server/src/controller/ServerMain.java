@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import service.AuthService;
+import service.DictionaryService;
+import service.MatchService;
 import service.UserService;
 import util.Logger;
 
@@ -19,13 +23,22 @@ public class ServerMain {
     private ExecutorService threadPool;
     private AuthService authService;
     private UserService userService;
+    private DictionaryService dictionaryService;
+    private MatchService matchService;
     private final List<ClientHandler> clientHandlers;
+    private final Map<Integer, ClientHandler> userIdToHandler;
     
     public ServerMain() {
         threadPool = Executors.newCachedThreadPool();
         authService = new AuthService();
         userService = new UserService();
+        dictionaryService = new DictionaryService();
+        matchService = new MatchService(dictionaryService, userService);
         clientHandlers = new ArrayList<>();
+        userIdToHandler = new HashMap<>();
+
+        // Provide a sender so services can push messages to users
+        userService.setMessageSender((userId, message) -> sendToUser(userId, message));
     }
     
     public void start() {
@@ -39,7 +52,7 @@ public class ServerMain {
                 Logger.info("New client connected: " + clientSocket.getInetAddress().getHostAddress());
                 
                 // Create a new handler for this client and submit it to the thread pool
-                ClientHandler clientHandler = new ClientHandler(clientSocket, authService, userService, this);
+                ClientHandler clientHandler = new ClientHandler(clientSocket, authService, userService, matchService, this);
                 clientHandlers.add(clientHandler);
                 threadPool.submit(clientHandler);
             }
@@ -81,6 +94,35 @@ public class ServerMain {
                 }
             });
         }
+    }
+
+    // ---------------- Messaging helpers ----------------
+
+    public void registerClient(int userId, ClientHandler handler) {
+        synchronized (userIdToHandler) {
+            userIdToHandler.put(userId, handler);
+        }
+    }
+
+    public void unregisterClient(int userId) {
+        synchronized (userIdToHandler) {
+            userIdToHandler.remove(userId);
+        }
+    }
+
+    public void sendToUser(int userId, String message) {
+        ClientHandler handler;
+        synchronized (userIdToHandler) {
+            handler = userIdToHandler.get(userId);
+        }
+        if (handler != null) {
+            handler.sendMessage(message);
+        }
+    }
+
+    public void sendToUsers(int userId1, int userId2, String message) {
+        sendToUser(userId1, message);
+        if (userId2 != userId1) sendToUser(userId2, message);
     }
     
     /**

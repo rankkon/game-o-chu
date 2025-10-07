@@ -54,6 +54,12 @@ public class LobbyController implements SocketHandler.SocketListener {
     public void logout() {
         authController.logout();
     }
+
+    public void sendInvite(int toUserId) {
+        JsonObject data = new JsonObject();
+        data.addProperty("toUserId", toUserId);
+        socketHandler.sendMessage("INVITE_SEND", data);
+    }
     
     @Override
     public void onMessage(String type, JsonObject data) {
@@ -69,6 +75,24 @@ public class LobbyController implements SocketHandler.SocketListener {
                 break;
             case "USER_OFFLINE":
                 handleUserOffline(data);
+                break;
+            case "INVITE_REQUEST":
+                handleInviteRequest(data);
+                break;
+            case "INVITE_STATUS":
+                handleInviteStatus(data);
+                break;
+            case "INVITE_RESPONSE":
+                handleInviteResponse(data);
+                break;
+            case "match_start":
+                handleMatchStart(data);
+                break;
+            case "match_update":
+                handleMatchUpdate(data);
+                break;
+            case "match_result":
+                handleMatchResult(data);
                 break;
         }
     }
@@ -143,6 +167,68 @@ public class LobbyController implements SocketHandler.SocketListener {
             if (lobbyFrame != null) {
                 lobbyFrame.updateOnlineUsers(onlineUsers);
             }
+        }
+    }
+
+    private void handleInviteRequest(JsonObject data) {
+        int fromUserId = data.get("fromUserId").getAsInt();
+        String fromUsername = data.get("fromUsername").getAsString();
+        if (lobbyFrame != null) {
+            boolean accepted = javax.swing.JOptionPane.showConfirmDialog(lobbyFrame,
+                    "" + fromUsername + " mời bạn đấu. Chấp nhận?",
+                    "Lời mời đấu",
+                    javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION;
+
+            JsonObject resp = new JsonObject();
+            resp.addProperty("fromUserId", fromUserId);
+            resp.addProperty("accepted", accepted);
+            socketHandler.sendMessage("INVITE_RESPONSE", resp);
+        }
+    }
+
+    private void handleMatchStart(JsonObject data) {
+        // data payload for server action-based messages: { action, roomId, data }
+        String roomId = data.has("roomId") ? data.get("roomId").getAsString() : "";
+        if (lobbyFrame != null) {
+            lobbyFrame.showInfo("Trận đấu bắt đầu! Phòng: " + roomId);
+        }
+        // TODO: transition to MatchFrame and render board
+    }
+
+    private void handleMatchUpdate(JsonObject data) {
+        // For now, show minimal info
+        if (lobbyFrame != null) {
+            // Avoid spamming dialogs; in real flow, update MatchFrame UI
+        }
+    }
+
+    private void handleMatchResult(JsonObject data) {
+        String winner = data.has("winner") ? data.get("winner").getAsString() : "";
+        if (lobbyFrame != null) {
+            lobbyFrame.showInfo("Kết thúc trận! Người thắng: " + winner);
+        }
+    }
+
+    private void handleInviteStatus(JsonObject data) {
+        String status = data.get("status").getAsString();
+        if (lobbyFrame != null) {
+            if ("sent".equals(status)) {
+                lobbyFrame.showInfo("Đã gửi lời mời.");
+            } else if ("accepted".equals(status)) {
+                lobbyFrame.showInfo("Đã chấp nhận lời mời.");
+            } else if ("rejected".equals(status)) {
+                lobbyFrame.showInfo("Đã từ chối lời mời.");
+            } else {
+                String msg = data.has("message") ? data.get("message").getAsString() : "Lỗi";
+                lobbyFrame.showError(msg);
+            }
+        }
+    }
+
+    private void handleInviteResponse(JsonObject data) {
+        boolean accepted = data.get("accepted").getAsBoolean();
+        if (lobbyFrame != null) {
+            lobbyFrame.showInfo(accepted ? "Đối thủ đã chấp nhận!" : "Đối thủ đã từ chối.");
         }
     }
     

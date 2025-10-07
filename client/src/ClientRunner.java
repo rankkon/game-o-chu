@@ -7,9 +7,6 @@ import javax.swing.UIManager;
 import controller.AuthController;
 import controller.SocketHandler;
 
-/**
- * Lớp chính để khởi chạy Client Game Ô Chữ
- */
 public class ClientRunner {
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_PORT = 12345;
