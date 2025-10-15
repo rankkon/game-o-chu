@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import model.User;
+import model.MatchRoom;
 import service.AuthService;
 import service.MatchService;
 import service.UserService;
@@ -57,6 +58,8 @@ public class ClientHandler implements Runnable {
             JsonObject json = JsonParser.parseString(message).getAsJsonObject();
             String type = json.get("type").getAsString();
 
+            System.out.println("Received message type: " + type); // Debug log
+
             switch (type) {
                 case "LOGIN":
                     handleLogin(json);
@@ -81,6 +84,9 @@ public class ClientHandler implements Runnable {
                     break;
                 case "GET_USER_PROFILE":
                     handleGetUserProfile(json);
+                    break;
+                case "CHAT_MESSAGE":
+                    handleChatMessage(json);
                     break;
                 default:
                     sendError("Unknown request type: " + type);
@@ -161,6 +167,39 @@ public class ClientHandler implements Runnable {
         } else {
             sendError("User not found");
         }
+    }
+
+    private void handleChatMessage(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+
+        String roomId = json.get("roomId").getAsString();
+        String message = json.get("message").getAsString();
+
+        // Get the match room
+        MatchRoom room = matchService.getRoom(roomId);
+        if (room == null) {
+            sendError("Phòng không tồn tại");
+            return;
+        }
+
+        // Create chat message
+        JsonObject chatMsg = new JsonObject();
+        chatMsg.addProperty("type", "CHAT_MESSAGE");
+        chatMsg.addProperty("senderId", currentUser.getId());
+        chatMsg.addProperty("senderName", currentUser.getUsername());
+        chatMsg.addProperty("message", message);
+
+        // Send to other player
+        int otherPlayerId;
+        if (currentUser.getId() == room.getCreatorId()) {
+            otherPlayerId = room.getOpponentId();
+        } else {
+            otherPlayerId = room.getCreatorId();
+        }
+        serverMain.sendToUser(otherPlayerId, chatMsg.toString());
     }
 
     // ------------------- Invite handlers -------------------

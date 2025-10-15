@@ -1,9 +1,13 @@
 package service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -53,6 +57,28 @@ public class MatchService {
     }
 
     /**
+     * Get room by ID
+     */
+    public MatchRoom getRoom(String roomId) {
+        return rooms.get(roomId);
+    }
+
+    /**
+     * Lấy danh sách người chơi trong phòng
+     */
+    public List<Integer> getPlayersInRoom(String roomId) {
+        MatchRoom room = rooms.get(roomId);
+        if (room == null) return null;
+        
+        List<Integer> players = new ArrayList<>();
+        players.add(room.getCreatorId());
+        if (room.getOpponentId() != 0) {
+            players.add(room.getOpponentId());
+        }
+        return players;
+    }
+
+    /**
      * Ghép thêm người chơi thứ hai và bắt đầu trận đấu
      */
     public void startMatch(String roomId, int opponentId) {
@@ -72,7 +98,7 @@ public class MatchService {
         room.setCategoryName(categoryName);
 
         // Khởi tạo điểm
-        room.setPlayers(new HashMap<Integer, PlayerState>());
+        room.setPlayers(new HashMap<>());
         room.getPlayers().put(room.getCreatorId(), new PlayerState());
         room.getPlayers().put(room.getOpponentId(), new PlayerState());
 
@@ -228,9 +254,5 @@ public class MatchService {
 
     public void removeRoom(String roomId) {
         rooms.remove(roomId);
-    }
-
-    public MatchRoom getRoom(String roomId) {
-        return rooms.get(roomId);
     }
 }
