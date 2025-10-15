@@ -2,8 +2,8 @@
 --  TẠO DATABASE
 -- ===============================
 CREATE DATABASE IF NOT EXISTS ochu
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
+    CHARACTER SET utf8
+    COLLATE utf8_unicode_ci;
 
 USE ochu;
 
@@ -12,11 +12,11 @@ USE ochu;
 -- ===============================
 CREATE TABLE IF NOT EXISTS users (
     ID INT AUTO_INCREMENT PRIMARY KEY,
-    Username VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
-    Password VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-    Avatar VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT '',
-    Name VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-    Gender VARCHAR(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Nam',
+    Username VARCHAR(50) COLLATE utf8_unicode_ci NOT NULL UNIQUE,
+    Password VARCHAR(255) COLLATE utf8_unicode_ci NOT NULL,
+    Avatar VARCHAR(255) COLLATE utf8_unicode_ci DEFAULT '',
+    Name VARCHAR(100) COLLATE utf8_unicode_ci NOT NULL,
+    Gender VARCHAR(10) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Nam',
     YearOfBirth INT(4) DEFAULT 2004,
     Score DOUBLE NOT NULL DEFAULT 1000,     
     MatchCount INT DEFAULT 0,
@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS users (
     Rank INT NOT NULL DEFAULT -1,
     Blocked TINYINT(1) DEFAULT 0
 ) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci;
+  DEFAULT CHARSET=utf8
+  COLLATE=utf8_unicode_ci;
 
 -- ===============================
 --  DỮ LIỆU NGƯỜI DÙNG MẪU
@@ -47,35 +47,35 @@ CREATE TABLE IF NOT EXISTS game_match (
     match_id INT AUTO_INCREMENT PRIMARY KEY,
     player1_id INT NOT NULL,
     player2_id INT NOT NULL,
-    category_name VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,   -- Chủ đề (VD: Hoa quả, Nghề nghiệp)
-    words_json JSON NOT NULL,                                        -- Danh sách 5 từ (VD: ["táo","cam","xoài","ổi","bơ"])
+    category_name VARCHAR(100) COLLATE utf8_unicode_ci NOT NULL,
+    words_json JSON NOT NULL,
     winner_id INT DEFAULT NULL,
     loser_id INT DEFAULT NULL,
     player1_score INT DEFAULT 0,
     player2_score INT DEFAULT 0,
-    winner_time_remaining INT DEFAULT NULL,                          -- Thời gian còn lại nếu thắng nhanh
+    winner_time_remaining INT DEFAULT NULL,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     end_time DATETIME DEFAULT NULL,
-    chat_log MEDIUMTEXT COLLATE utf8mb4_unicode_ci,                  -- Lưu nội dung chat hoặc log
+    chat_log MEDIUMTEXT COLLATE utf8_unicode_ci,
     FOREIGN KEY (player1_id) REFERENCES users(ID),
     FOREIGN KEY (player2_id) REFERENCES users(ID),
     FOREIGN KEY (winner_id) REFERENCES users(ID),
     FOREIGN KEY (loser_id) REFERENCES users(ID)
 ) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci;
+  DEFAULT CHARSET=utf8
+  COLLATE=utf8_unicode_ci;
 
 -- ===============================
 -- BẢNG CHỦ ĐỀ (CATEGORY)
 -- ===============================
 CREATE TABLE IF NOT EXISTS category (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
-    category_code VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,  -- Mã không dấu (VD: HOAQUA)
-    category_name VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,         -- Tên có dấu (VD: Hoa quả)
-    description VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+    category_code VARCHAR(50) COLLATE utf8_unicode_ci NOT NULL,
+    category_name VARCHAR(100) COLLATE utf8_unicode_ci NOT NULL,
+    description VARCHAR(255) COLLATE utf8_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci;
+  DEFAULT CHARSET=utf8
+  COLLATE=utf8_unicode_ci;
 
 -- DỮ LIỆU CHỦ ĐỀ
 INSERT INTO category (category_code, category_name, description)
@@ -89,14 +89,14 @@ VALUES
 -- ===============================
 CREATE TABLE IF NOT EXISTS dictionary (
     word_id INT AUTO_INCREMENT PRIMARY KEY,
-    word_code VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,  -- dạng không dấu viết hoa (VD: TAO)
-    word_text VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,         -- dạng có dấu (VD: táo)
+    word_code VARCHAR(100) COLLATE utf8_unicode_ci NOT NULL,
+    word_text VARCHAR(100) COLLATE utf8_unicode_ci NOT NULL,
     category_id INT NOT NULL,
     FOREIGN KEY (category_id) REFERENCES category(category_id)
       ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci;
+  DEFAULT CHARSET=utf8
+  COLLATE=utf8_unicode_ci;
 
 -- =====================================
 -- HOA QUẢ (category_id = 1)
