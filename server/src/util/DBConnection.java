@@ -37,9 +37,6 @@ public class DBConnection {
 
         } catch (SQLException e) {
             System.err.println("[ERROR] Failed to connect to database.");
-            System.err.println("[DEBUG] SQLException Message: " + e.getMessage());
-            System.err.println("[DEBUG] SQLState: " + e.getSQLState());
-            System.err.println("[DEBUG] Vendor Error Code: " + e.getErrorCode());
             e.printStackTrace();
         }
     }
@@ -62,9 +59,6 @@ public class DBConnection {
             return conn;
         } catch (SQLException e) {
             System.err.println("[ERROR] Unable to establish connection in getConnection().");
-            System.err.println("[DEBUG] SQLException Message: " + e.getMessage());
-            System.err.println("[DEBUG] SQLState: " + e.getSQLState());
-            System.err.println("[DEBUG] Vendor Error Code: " + e.getErrorCode());
             throw e;
         }
     }
