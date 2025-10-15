@@ -34,7 +34,15 @@ public class SocketHandler {
             String message;
             while (running && (message = in.readLine()) != null) {
                 JsonObject json = JsonParser.parseString(message).getAsJsonObject();
-                String type = json.get("type").getAsString();
+                String type;
+                if (json.has("type")) {
+                    type = json.get("type").getAsString();
+                } else if (json.has("action")) {
+                    type = json.get("action").getAsString();
+                } else {
+                    // Unknown envelope, skip
+                    continue;
+                }
                 
                 // Broadcast message to all listeners (create copy to avoid ConcurrentModificationException)
                 List<SocketListener> listenersCopy = new ArrayList<>(listeners);

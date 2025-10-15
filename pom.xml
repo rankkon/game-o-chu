@@ -14,5 +14,11 @@
         <module>server</module>
         <module>client</module>
     </modules>
-
+    
+    <properties>
+    <java.version>23</java.version>
+    <maven.compiler.source>23</maven.compiler.source>
+    <maven.compiler.target>23</maven.compiler.target>
+    </properties>
+    
 </project>

@@ -12,7 +12,7 @@
     </parent>
 
     <artifactId>server</artifactId>
-
+    
     <dependencies>
         <!-- MySQL JDBC -->
         <dependency>

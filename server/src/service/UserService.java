@@ -11,6 +11,7 @@ import model.User;
 public class UserService {
     private final UserDAO userDAO;
     private final Map<Integer, User> onlineUsers;
+    private MessageSender messageSender;
 
     public UserService() {
         this.userDAO = new UserDAO();
@@ -54,5 +55,52 @@ public class UserService {
 
     public int getOnlineCount() {
         return onlineUsers.size();
+    }
+
+    // ------------------ Messaging hooks ------------------
+    public interface MessageSender {
+        void send(int userId, String message);
+    }
+
+    public void setMessageSender(MessageSender sender) {
+        this.messageSender = sender;
+    }
+
+    public void sendToUser(int userId, String message) {
+        if (messageSender != null) messageSender.send(userId, message);
+    }
+
+    public void sendToUsers(int userId1, int userId2, String message) {
+        sendToUser(userId1, message);
+        if (userId2 != userId1) sendToUser(userId2, message);
+    }
+
+    // Backward compatibility with username-based messaging
+    public void sendToUser(String username, String message) {
+        User user = getUserByUsername(username);
+        if (user != null) {
+            sendToUser(user.getId(), message);
+        }
+    }
+
+    public void sendToUsers(String username1, String username2, String message) {
+        User u1 = getUserByUsername(username1);
+        User u2 = getUserByUsername(username2);
+        if (u1 != null) sendToUser(u1.getId(), message);
+        if (u2 != null && (u1 == null || u2.getId() != u1.getId())) sendToUser(u2.getId(), message);
+    }
+
+    // ------------------ Score update ------------------
+    public void addScore(int userId, int delta) {
+        User user = onlineUsers.get(userId);
+        if (user != null) {
+            user.setScore(user.getScore() + delta);
+        } else {
+            User dbUser = userDAO.getUserById(userId);
+            if (dbUser != null) {
+                dbUser.setScore(dbUser.getScore() + delta);
+                // Persist if needed (not implemented in this simplified version)
+            }
+        }
     }
 }

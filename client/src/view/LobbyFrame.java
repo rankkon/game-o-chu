@@ -170,6 +170,7 @@ public class LobbyFrame extends JFrame {
         inviteButton.addActionListener(e -> {
             User selectedUser = onlineUsersList.getSelectedValue();
             if (selectedUser != null && selectedUser.getId() != currentUser.getId()) {
+                controller.sendInvite(selectedUser.getId());
                 JOptionPane.showMessageDialog(this, "Đã gửi lời mời đấu tới " + selectedUser.getName());
             } else if (selectedUser != null && selectedUser.getId() == currentUser.getId()) {
                 JOptionPane.showMessageDialog(this, "Bạn không thể tự mời chính mình!");
@@ -200,6 +201,10 @@ public class LobbyFrame extends JFrame {
 
     public void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showInfo(String message) {
+        JOptionPane.showMessageDialog(this, message, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private class UserListCellRenderer extends DefaultListCellRenderer {

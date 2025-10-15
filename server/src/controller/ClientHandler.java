@@ -12,6 +12,7 @@ import com.google.gson.JsonParser;
 
 import model.User;
 import service.AuthService;
+import service.MatchService;
 import service.UserService;
 import util.JsonUtil;
 
@@ -21,14 +22,16 @@ public class ClientHandler implements Runnable {
     private final PrintWriter out;
     private final AuthService authService;
     private final UserService userService;
+    private final MatchService matchService;
     private final ServerMain serverMain;
     private User currentUser;
     private boolean running = true;
 
-    public ClientHandler(Socket socket, AuthService authService, UserService userService, ServerMain serverMain) throws IOException {
+    public ClientHandler(Socket socket, AuthService authService, UserService userService, MatchService matchService, ServerMain serverMain) throws IOException {
         this.clientSocket = socket;
         this.authService = authService;
         this.userService = userService;
+        this.matchService = matchService;
         this.serverMain = serverMain;
 
         this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -60,6 +63,18 @@ public class ClientHandler implements Runnable {
                     break;
                 case "LOGOUT":
                     handleLogout();
+                    break;
+                case "INVITE_SEND":
+                    handleInviteSend(json);
+                    break;
+                case "INVITE_RESPONSE":
+                    handleInviteResponse(json);
+                    break;
+                case "MATCH_INPUT":
+                    handleMatchInput(json);
+                    break;
+                case "MATCH_END":
+                    handleMatchEnd(json);
                     break;
                 case "GET_ONLINE_USERS":
                     handleGetOnlineUsers();
@@ -99,6 +114,9 @@ public class ClientHandler implements Runnable {
                 this.currentUser = user;
                 userService.addOnlineUser(user);
 
+                // Register mapping for direct messaging
+                serverMain.registerClient(user.getId(), this);
+
                 JsonObject response = makeResponse("LOGIN_RESPONSE", "success");
                 response.add("user", JsonParser.parseString(JsonUtil.toJson(user)));
                 send(response);
@@ -117,6 +135,7 @@ public class ClientHandler implements Runnable {
         if (currentUser != null) {
             userService.removeOnlineUser(currentUser.getId());
             broadcastUserOffline(currentUser);
+            serverMain.unregisterClient(currentUser.getId());
             currentUser = null;
 
             send(makeResponse("LOGOUT_RESPONSE", "success"));
@@ -142,6 +161,86 @@ public class ClientHandler implements Runnable {
         } else {
             sendError("User not found");
         }
+    }
+
+    // ------------------- Invite handlers -------------------
+
+    private void handleInviteSend(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+
+        int toUserId = json.get("toUserId").getAsInt();
+        User target = userService.getUserById(toUserId);
+        if (target == null || !userService.isUserOnline(toUserId)) {
+            JsonObject resp = new JsonObject();
+            resp.addProperty("type", "INVITE_STATUS");
+            resp.addProperty("status", "error");
+            resp.addProperty("message", "Người chơi không online");
+            send(resp);
+            return;
+        }
+
+        JsonObject invite = new JsonObject();
+        invite.addProperty("type", "INVITE_REQUEST");
+        invite.addProperty("fromUserId", currentUser.getId());
+        invite.addProperty("fromUsername", currentUser.getUsername());
+        serverMain.sendToUser(toUserId, invite.toString());
+
+        JsonObject ack = new JsonObject();
+        ack.addProperty("type", "INVITE_STATUS");
+        ack.addProperty("status", "sent");
+        send(ack);
+    }
+
+    private void handleInviteResponse(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+
+        int fromUserId = json.get("fromUserId").getAsInt();
+        boolean accepted = json.get("accepted").getAsBoolean();
+
+        JsonObject notify = new JsonObject();
+        notify.addProperty("type", "INVITE_RESPONSE");
+        notify.addProperty("fromUserId", currentUser.getId());
+        notify.addProperty("accepted", accepted);
+        serverMain.sendToUser(fromUserId, notify.toString());
+
+        // If accepted, create a match and notify both players
+        if (accepted) {
+            model.MatchRoom room = matchService.createRoom(fromUserId);
+            matchService.startMatch(room.getRoomId(), currentUser.getId());
+        }
+
+        JsonObject ack = new JsonObject();
+        ack.addProperty("type", "INVITE_STATUS");
+        ack.addProperty("status", accepted ? "accepted" : "rejected");
+        send(ack);
+    }
+
+    private void handleMatchInput(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        String roomId = json.get("roomId").getAsString();
+        int wordIdx = json.get("wordIdx").getAsInt();
+        int charIdx = json.get("charIdx").getAsInt();
+        String chStr = json.get("ch").getAsString();
+        char ch = chStr != null && chStr.length() > 0 ? chStr.charAt(0) : '\0';
+        matchService.handleLetterInput(roomId, currentUser.getId(), wordIdx, charIdx, ch);
+    }
+
+    private void handleMatchEnd(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        String roomId = json.get("roomId").getAsString();
+        matchService.endMatch(roomId);
     }
 
     // ------------------- Broadcast -------------------
@@ -190,6 +289,7 @@ public class ClientHandler implements Runnable {
         if (currentUser != null) {
             userService.removeOnlineUser(currentUser.getId());
             broadcastUserOffline(currentUser);
+            serverMain.unregisterClient(currentUser.getId());
         }
 
         running = false;
