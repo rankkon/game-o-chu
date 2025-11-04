@@ -46,6 +46,53 @@ public class MatchDAO {
             e.printStackTrace();
         }
     }
+
+    public void appendChatLog(int matchId, String senderName, String message, Timestamp time) {
+        String chatEntry = String.format("[%s] %s: %s\n", time.toString(), senderName, message);
+        
+        try (Connection conn = DBConnection.getInstance().getConnection()) {
+            // Đọc chat_log hiện tại
+            String currentLog = "";
+            String selectSql = "SELECT chat_log FROM game_match WHERE match_id=?";
+            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
+                ps.setInt(1, matchId);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    String existing = rs.getString("chat_log");
+                    if (existing != null) {
+                        currentLog = existing;
+                    }
+                }
+            }
+
+            // Thêm tin nhắn mới vào cuối
+            String newLog = currentLog + chatEntry;
+            
+            // Cập nhật chat_log
+            String updateSql = "UPDATE game_match SET chat_log=? WHERE match_id=?";
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setString(1, newLog);
+                ps.setInt(2, matchId);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getChatLog(int matchId) {
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT chat_log FROM game_match WHERE match_id=?")) {
+            ps.setInt(1, matchId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("chat_log");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
 }
 
 

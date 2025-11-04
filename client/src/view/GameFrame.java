@@ -262,25 +262,16 @@ public class GameFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void txtMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMessageActionPerformed
-        String message = txtMessage.getText().trim();
-        if (!message.isEmpty()) {
-            txtChatArea.append("Tôi: " + message + "\n");
-            txtMessage.setText(""); // xóa ô nhập
-            
-            // Send chat message to server
-            if (socketHandler != null) {
-                JsonObject payload = new JsonObject();
-                payload.addProperty("roomId", roomId);
-                payload.addProperty("message", message);
-                socketHandler.sendMessage("CHAT_MESSAGE", payload);
-            }
-        }
+        sendChatMessage();
     }//GEN-LAST:event_txtMessageActionPerformed
 
     private void btnSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendActionPerformed
+        sendChatMessage();
+    }//GEN-LAST:event_btnSendActionPerformed
+
+    private void sendChatMessage() {
         String message = txtMessage.getText().trim();
         if (!message.isEmpty()) {
-            txtChatArea.append("Tôi: " + message + "\n");
             txtMessage.setText(""); // xóa ô nhập
             
             // Send chat message to server
@@ -291,7 +282,7 @@ public class GameFrame extends javax.swing.JFrame {
                 socketHandler.sendMessage("CHAT_MESSAGE", payload);
             }
         }
-    }//GEN-LAST:event_btnSendActionPerformed
+    }
 
     private void txtMessageMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtMessageMouseClicked
 

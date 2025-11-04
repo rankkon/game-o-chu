@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.JsonObject;
 import model.MatchRoom;
 import model.PlayerState;
 import model.WordInstance;
@@ -227,6 +228,36 @@ public class MatchService {
     }
 
     /**
+     * Xử lý tin nhắn chat trong phòng
+     */
+    public void handleChatMessage(String roomId, int senderId, String message) {
+        MatchRoom room = rooms.get(roomId);
+        if (room == null || room.getMatchId() == null) return;
+
+        // Lấy tên người gửi
+        String senderName = "Người chơi";
+        try {
+            model.User sender = userService.getUserById(senderId);
+            if (sender != null && sender.getName() != null) {
+                senderName = sender.getName();
+            }
+        } catch (Exception ignored) {}
+
+        // Lưu vào database
+        matchDAO.appendChatLog(room.getMatchId(), senderName, message, new java.sql.Timestamp(System.currentTimeMillis()));
+
+        // Gửi tin nhắn đến cả 2 người chơi
+        JsonObject chatMessage = new JsonObject();
+        chatMessage.addProperty("type", "CHAT_MESSAGE");
+        chatMessage.addProperty("roomId", roomId);
+        chatMessage.addProperty("senderName", senderName);
+        chatMessage.addProperty("message", message);
+        String json = chatMessage.toString();
+        userService.sendToUser(room.getCreatorId(), json);
+        userService.sendToUser(room.getOpponentId(), json);
+    }
+
+    /**
      * Kết thúc trận đấu (hết thời gian hoặc hoàn tất)
      */
     public void endMatch(String roomId) {
@@ -302,5 +333,16 @@ public class MatchService {
 
     public MatchRoom getRoom(String roomId) {
         return rooms.get(roomId);
+    }
+
+    /**
+     * Gửi tin nhắn đến tất cả người chơi trong phòng
+     */
+    public void broadcastToRoom(String roomId, String message) {
+        MatchRoom room = rooms.get(roomId);
+        if (room != null) {
+            userService.sendToUser(room.getCreatorId(), message);
+            userService.sendToUser(room.getOpponentId(), message);
+        }
     }
 }

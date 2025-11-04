@@ -82,6 +82,9 @@ public class ClientHandler implements Runnable {
                 case "GET_USER_PROFILE":
                     handleGetUserProfile(json);
                     break;
+                case "CHAT_MESSAGE":
+                    handleChatMessage(json);
+                    break;
                 default:
                     sendError("Unknown request type: " + type);
                     break;
@@ -241,6 +244,19 @@ public class ClientHandler implements Runnable {
         }
         String roomId = json.get("roomId").getAsString();
         matchService.endMatch(roomId);
+    }
+
+    private void handleChatMessage(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        
+        String roomId = json.get("roomId").getAsString();
+        String message = json.get("message").getAsString();
+        
+        // Gửi tới MatchService để xử lý và lưu chat log
+        matchService.handleChatMessage(roomId, currentUser.getId(), message);
     }
 
     // ------------------- Broadcast -------------------
