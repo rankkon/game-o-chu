@@ -103,4 +103,33 @@ public class UserService {
             }
         }
     }
+
+    /**
+     * Record the match result: update DB and in-memory user objects.
+     * winnerScoreDelta: e.g. +100 for winner; loser gets 0.
+     */
+    public void recordMatchResult(int winnerId, int loserId, int winnerScoreDelta) {
+        // Persist increments to DB
+        try {
+            // Winner: +score, +1 match, +1 win
+            userDAO.updateStats(winnerId, (double) winnerScoreDelta, 1, 1, 0);
+            // Loser: +0 score, +1 match, +1 lose
+            userDAO.updateStats(loserId, 0.0, 1, 0, 1);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        // Update in-memory online users if present
+        User w = onlineUsers.get(winnerId);
+        if (w != null) {
+            w.setScore(w.getScore() + winnerScoreDelta);
+            w.setMatchCount(w.getMatchCount() + 1);
+            w.setWinCount(w.getWinCount() + 1);
+        }
+        User l = onlineUsers.get(loserId);
+        if (l != null) {
+            l.setMatchCount(l.getMatchCount() + 1);
+            l.setLoseCount(l.getLoseCount() + 1);
+        }
+    }
 }

@@ -91,21 +91,20 @@ public class GameFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Game Ô Chữ");
-        setPreferredSize(new java.awt.Dimension(1280, 720));
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         javax.swing.GroupLayout boardPanelLayout = new javax.swing.GroupLayout(boardPanel);
         boardPanel.setLayout(boardPanelLayout);
         boardPanelLayout.setHorizontalGroup(
             boardPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 1040, Short.MAX_VALUE)
+            .addGap(0, 570, Short.MAX_VALUE)
         );
         boardPanelLayout.setVerticalGroup(
             boardPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 720, Short.MAX_VALUE)
+            .addGap(0, 680, Short.MAX_VALUE)
         );
 
-        getContentPane().add(boardPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1040, 720));
+        getContentPane().add(boardPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 570, 680));
 
         jLabel1.setText("Chức năng");
 
@@ -206,7 +205,7 @@ public class GameFrame extends javax.swing.JFrame {
                 .addGap(28, 28, 28))
         );
 
-        getContentPane().add(infoPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(1040, 10, 220, 380));
+        getContentPane().add(infoPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 0, 220, 380));
 
         chatPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -220,7 +219,7 @@ public class GameFrame extends javax.swing.JFrame {
         txtChatArea.setWrapStyleWord(true);
         jScrollPane1.setViewportView(txtChatArea);
 
-        chatPanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 40, 200, 230));
+        chatPanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 40, 200, 210));
 
         txtMessage.setToolTipText("");
         txtMessage.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -233,7 +232,7 @@ public class GameFrame extends javax.swing.JFrame {
                 txtMessageActionPerformed(evt);
             }
         });
-        chatPanel.add(txtMessage, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 280, 160, 30));
+        chatPanel.add(txtMessage, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 260, 160, -1));
 
         btnSend.setText("Gửi");
         btnSend.addActionListener(new java.awt.event.ActionListener() {
@@ -241,9 +240,9 @@ public class GameFrame extends javax.swing.JFrame {
                 btnSendActionPerformed(evt);
             }
         });
-        chatPanel.add(btnSend, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 280, 50, 30));
+        chatPanel.add(btnSend, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 260, 50, -1));
 
-        getContentPane().add(chatPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(1040, 400, 220, 320));
+        getContentPane().add(chatPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 390, 220, 290));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -357,8 +356,18 @@ public class GameFrame extends javax.swing.JFrame {
         wordsContainer.setLayout(new GridLayout(words.size(), 1, 5, 5));
         wordsContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        for (JsonElement we : words) {
-            JsonObject w = we.getAsJsonObject();
+        // Determine per-player revealed patterns (server now includes per-player map 'playerRevealed')
+        JsonObject playerRevealed = data.has("playerRevealed") ? data.getAsJsonObject("playerRevealed") : null;
+        JsonArray myRevealedArray = null;
+        if (playerRevealed != null && selfUserId > 0) {
+            String key = String.valueOf(selfUserId);
+            if (playerRevealed.has(key)) {
+                try { myRevealedArray = playerRevealed.getAsJsonArray(key); } catch (Exception ignored) {}
+            }
+        }
+
+        for (int wi = 0; wi < words.size(); wi++) {
+            JsonObject w = words.get(wi).getAsJsonObject();
             String hint = w.has("hint") ? w.get("hint").getAsString() : "";
             int len = w.has("length") ? w.get("length").getAsInt() : 0;
 
@@ -380,8 +389,16 @@ public class GameFrame extends javax.swing.JFrame {
                 tf.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
                 tf.setPreferredSize(new Dimension(35, 35));
                 tf.setBackground(Color.WHITE);
-                // If server provided revealed pattern, prefill revealed letters and disable editing for them
-                String revealed = w.has("revealed") ? w.get("revealed").getAsString() : null;
+                // If server provided per-player revealed pattern, prefill revealed letters and disable editing for them
+                String revealed = null;
+                if (myRevealedArray != null && wi < myRevealedArray.size()) {
+                    try { revealed = myRevealedArray.get(wi).getAsString(); } catch (Exception ignored) { revealed = null; }
+                }
+                // Fallback to top-level revealed if present (backwards compatibility)
+                if ((revealed == null || revealed.isEmpty()) && w.has("revealed")) {
+                    revealed = w.get("revealed").getAsString();
+                }
+
                 if (revealed != null && revealed.length() > i) {
                     char rc = revealed.charAt(i);
                     if (rc != '_' && rc != '\u0000') {
@@ -396,6 +413,8 @@ public class GameFrame extends javax.swing.JFrame {
                 tf.addKeyListener(new KeyAdapter() {
                     @Override
                     public void keyTyped(KeyEvent e) {
+                        // Do nothing if field is not editable (fixed hint)
+                        if (!tf.isEditable()) { e.consume(); return; }
                         char ch = e.getKeyChar();
                         if (Character.isLetter(ch)) {
                             tf.setText(("" + ch).toUpperCase());
@@ -413,6 +432,7 @@ public class GameFrame extends javax.swing.JFrame {
                     @Override
                     public void keyPressed(KeyEvent e) {
                         if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                            if (!tf.isEditable()) { e.consume(); return; }
                             tf.setText("");
                             tf.setBackground(Color.WHITE);
                             // Move focus to previous cell
@@ -504,7 +524,74 @@ public class GameFrame extends javax.swing.JFrame {
     }
 
     private void refreshFilled(JsonObject data) {
-        // Không hiển thị chữ đã điền từ server để tránh đối thủ nhìn thấy; chỉ cập nhật điểm/timer.
+        // Update local input fields according to server-authoritative per-player revealed patterns.
+        // Behavior:
+        // - For revealed/fixed cells (server shows a letter), set the cell text and make it non-editable.
+        // - For non-revealed cells: if the local user has already completed the word (all editable cells non-empty),
+        //   then clear any cells that the server does not consider revealed (i.e., wrong letters).
+        // - Otherwise leave local typed letters until server broadcasts an update after a full attempt.
+        if (wordInputs.isEmpty()) return;
+
+        JsonObject playerRevealed = data.has("playerRevealed") ? data.getAsJsonObject("playerRevealed") : null;
+        JsonArray myRevealedArray = null;
+        if (playerRevealed != null && selfUserId > 0) {
+            String key = String.valueOf(selfUserId);
+            if (playerRevealed.has(key)) {
+                try { myRevealedArray = playerRevealed.getAsJsonArray(key); } catch (Exception ignored) {}
+            }
+        }
+
+        for (int wi = 0; wi < wordInputs.size(); wi++) {
+            List<JTextField> inputs = wordInputs.get(wi);
+            String revealed = null;
+            if (myRevealedArray != null && wi < myRevealedArray.size()) {
+                try { revealed = myRevealedArray.get(wi).getAsString(); } catch (Exception ignored) { revealed = null; }
+            }
+
+            // Determine if the local user has filled all editable cells for this word
+            boolean localComplete = true;
+            for (JTextField tf : inputs) {
+                if (tf.isEditable()) {
+                    if (tf.getText() == null || tf.getText().trim().isEmpty()) { localComplete = false; break; }
+                }
+            }
+
+            for (int ci = 0; ci < inputs.size(); ci++) {
+                JTextField tf = inputs.get(ci);
+                char rc = '_';
+                if (revealed != null && revealed.length() > ci) rc = revealed.charAt(ci);
+
+                if (rc != '_' && rc != '\u0000') {
+                    // Server says this cell is revealed/correct — enforce it
+                    tf.setText(String.valueOf(rc));
+                    tf.setEditable(false);
+                    tf.setBackground(new Color(220, 220, 220));
+                    tf.setForeground(Color.BLACK);
+                } else {
+                    // Not revealed: only clear local wrong letters when the user had completed the word
+                    if (localComplete) {
+                        String cur = tf.getText();
+                        if (cur != null && !cur.trim().isEmpty()) {
+                            // Clear wrong letter (server does not show it as revealed)
+                            tf.setText("");
+                            tf.setBackground(Color.WHITE);
+                            tf.setEditable(true);
+                            tf.setForeground(Color.BLACK);
+                        } else {
+                            tf.setEditable(true);
+                            tf.setBackground(Color.WHITE);
+                            tf.setForeground(Color.BLACK);
+                        }
+                    } else {
+                        // don't clear mid-word typed letters; leave editable state as-is
+                        if (tf.isEditable()) {
+                            tf.setBackground(Color.WHITE);
+                            tf.setForeground(Color.BLACK);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void updateScores(JsonObject data) {

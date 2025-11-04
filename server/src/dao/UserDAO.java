@@ -30,6 +30,28 @@ public class UserDAO {
         }
         return null;
     }
+
+    /**
+     * Update user's aggregate stats after a match.
+     * scoreDelta: positive or negative delta to Score
+     * matchInc: usually 1
+     * winInc / loseInc: 1 or 0 depending on result
+     */
+    public void updateStats(int userId, double scoreDelta, int matchInc, int winInc, int loseInc) {
+        String sql = "UPDATE users SET Score = Score + ?, MatchCount = MatchCount + ?, WinCount = WinCount + ?, LoseCount = LoseCount + ? WHERE ID = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, scoreDelta);
+            ps.setInt(2, matchInc);
+            ps.setInt(3, winInc);
+            ps.setInt(4, loseInc);
+            ps.setInt(5, userId);
+            int updated = ps.executeUpdate();
+            System.out.println("[UserDAO] updateStats userId=" + userId + " scoreDelta=" + scoreDelta + " matchInc=" + matchInc + " winInc=" + winInc + " loseInc=" + loseInc + " -> rows=" + updated);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     
     public User getUserById(int id) {
         try (Connection conn = DBConnection.getInstance().getConnection()) {

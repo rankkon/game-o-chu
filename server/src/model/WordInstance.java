@@ -61,6 +61,21 @@ public class WordInstance {
             wasTried[idx] = true; // mark as already revealed
         }
     }
+
+    /**
+     * Reveal letters at the specified indices. This is used to apply the same
+     * reveal pattern to multiple per-player copies so both players see the
+     * same hint letters but keep independent filled/wasTried state.
+     */
+    public void revealAtIndices(java.util.List<Integer> indices) {
+        if (indices == null || indices.isEmpty()) return;
+        for (Integer idx : indices) {
+            if (idx >= 0 && idx < filled.length) {
+                filled[idx] = answer.charAt(idx);
+                wasTried[idx] = true;
+            }
+        }
+    }
 }
 
 
