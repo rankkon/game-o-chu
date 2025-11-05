@@ -40,9 +40,6 @@ public class MatchHistoryService {
             matchArray.add(match);
         }
         response.add("matches", matchArray);
-
-        // Log the response for debugging
-        System.out.println("Sending match history to user " + userId + ": " + response.toString());
         
         userService.sendToUser(userId, response.toString());
     }

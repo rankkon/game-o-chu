@@ -379,7 +379,7 @@ public class LobbyController implements SocketHandler.SocketListener {
             if (data.has("matches") && !data.get("matches").isJsonNull()) {
                 try {
                     JsonArray matchesArray = data.getAsJsonArray("matches");
-                    System.out.println("Received matches JSON: " + matchesArray.toString());
+                    // System.out.println("Received matches JSON: " + matchesArray.toString());
                     
                     for (JsonElement element : matchesArray) {
                         JsonObject matchObj = element.getAsJsonObject();
@@ -427,14 +427,14 @@ public class LobbyController implements SocketHandler.SocketListener {
                             matches.add(match);
                             
                         } catch (Exception e) {
-                            System.err.println("Error parsing match: " + e.getMessage() + 
-                                            "\nMatch data: " + matchObj.toString());
+                            // System.err.println("Error parsing match: " + e.getMessage() + 
+                            //                 "\nMatch data: " + matchObj.toString());
                             // Continue with next match
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Error parsing match array: " + e.getMessage() + 
-                                     "\nReceived data: " + data.toString());
+                    // System.err.println("Error parsing match array: " + e.getMessage() + 
+                    //                  "\nReceived data: " + data.toString());
                 }
             } else {
                 System.err.println("No matches found in response or matches array is null");
