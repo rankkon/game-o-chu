@@ -1,5 +1,7 @@
 package controller;
 
+import javax.swing.JOptionPane;
+
 import com.google.gson.JsonObject;
 
 import model.User;
@@ -29,6 +31,13 @@ public class AuthController implements SocketHandler.SocketListener {
         socketHandler.sendMessage("LOGIN", data);
     }
     
+    public void register(String username, String password) {
+        JsonObject data = new JsonObject();
+        data.addProperty("username", username);
+        data.addProperty("password", password);
+        socketHandler.sendMessage("REGISTER", data);
+    }
+
     public void logout() {
         socketHandler.sendMessage("LOGOUT", null);
         currentUser = null;
@@ -48,8 +57,27 @@ public class AuthController implements SocketHandler.SocketListener {
         } else if ("LOGOUT_RESPONSE".equals(type)) {
             handleLogoutResponse(data);
         }
+        else if ("REGISTER_RESPONSE".equals(type)) {
+            handleRegisterResponse(data);
+        }
     }
     
+    private void handleRegisterResponse(JsonObject data) {
+        String status = data.get("status").getAsString();
+        String message = data.get("message").getAsString();
+        
+        if ("success".equals(status)) {
+            // Hiển thị thông báo thành công
+            JOptionPane.showMessageDialog(loginFrame, 
+                    message, 
+                    "Đăng ký thành công", 
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            // Hiển thị lỗi (dùng lại hàm của LoginFrame)
+            loginFrame.showError(message);
+        }
+    }
+
     private void handleLoginResponse(JsonObject data) {
         String status = data.get("status").getAsString();
         

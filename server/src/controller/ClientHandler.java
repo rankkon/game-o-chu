@@ -66,6 +66,9 @@ public class ClientHandler implements Runnable {
                 case "LOGIN":
                     handleLogin(json);
                     break;
+                case "REGISTER":
+                    handleRegister(json);
+                    break;
                 case "GET_RANKINGS":
                     rankingController.handleGetRankings(this);
                     break;
@@ -106,6 +109,36 @@ public class ClientHandler implements Runnable {
     }
 
     // ------------------- Handlers -------------------
+
+    private void handleRegister(JsonObject json) {
+        try {
+            String username = json.get("username").getAsString();
+            String password = json.get("password").getAsString();
+
+            // Validation cơ bản
+            if (username == null || username.trim().isEmpty()) {
+                send(makeResponse("REGISTER_RESPONSE", "error", "Tài khoản không được để trống"));
+                return;
+            }
+            if (password == null || password.trim().isEmpty()) {
+                send(makeResponse("REGISTER_RESPONSE", "error", "Mật khẩu không được để trống"));
+                return;
+            }
+            
+            // Gọi AuthService (đã có sẵn)
+            boolean success = authService.register(username.trim(), password);
+
+            if (success) {
+                send(makeResponse("REGISTER_RESPONSE", "success", "Đăng ký thành công!"));
+            } else {
+                // UserDAO của bạn đã xử lý việc kiểm tra trùng lặp
+                send(makeResponse("REGISTER_RESPONSE", "error", "Tên tài khoản đã tồn tại"));
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling register: " + e.getMessage());
+            send(makeResponse("REGISTER_RESPONSE", "error", "Đăng ký thất bại do lỗi server"));
+        }
+    }
 
     private void handleLogin(JsonObject json) {
         try {
