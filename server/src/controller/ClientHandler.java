@@ -27,12 +27,15 @@ public class ClientHandler implements Runnable {
     private User currentUser;
     private boolean running = true;
 
+    private final MatchHistoryController matchHistoryController;
+
     public ClientHandler(Socket socket, AuthService authService, UserService userService, MatchService matchService, ServerMain serverMain) throws IOException {
         this.clientSocket = socket;
         this.authService = authService;
         this.userService = userService;
         this.matchService = matchService;
         this.serverMain = serverMain;
+        this.matchHistoryController = new MatchHistoryController(userService);
 
         this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         this.out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -52,6 +55,8 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private final RankingController rankingController = RankingController.getInstance();
+
     private void handleMessage(String message) {
         try {
             JsonObject json = JsonParser.parseString(message).getAsJsonObject();
@@ -60,6 +65,9 @@ public class ClientHandler implements Runnable {
             switch (type) {
                 case "LOGIN":
                     handleLogin(json);
+                    break;
+                case "GET_RANKINGS":
+                    rankingController.handleGetRankings(this);
                     break;
                 case "LOGOUT":
                     handleLogout();
@@ -84,6 +92,9 @@ public class ClientHandler implements Runnable {
                     break;
                 case "CHAT_MESSAGE":
                     handleChatMessage(json);
+                    break;
+                case "GET_MATCH_HISTORY":
+                    handleGetMatchHistory(json);
                     break;
                 default:
                     sendError("Unknown request type: " + type);
@@ -259,6 +270,14 @@ public class ClientHandler implements Runnable {
         matchService.handleChatMessage(roomId, currentUser.getId(), message);
     }
 
+    private void handleGetMatchHistory(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        matchHistoryController.handleGetMatchHistory(currentUser.getId());
+    }
+
     // ------------------- Broadcast -------------------
 
     private void broadcastUserOnline(User user) {
@@ -323,7 +342,17 @@ public class ClientHandler implements Runnable {
     }
     
     /**
-     * Send a message to this client (used by broadcast)
+     * Send a message to this client with type and data
+     */
+    public void sendMessage(String type, JsonObject data) {
+        JsonObject message = new JsonObject();
+        message.addProperty("type", type);
+        message.add("data", data);
+        out.println(message.toString());
+    }
+
+    /**
+     * Send a raw message to this client (used by broadcast)
      */
     public void sendMessage(String message) {
         out.println(message);

@@ -18,8 +18,8 @@ public class ClientRunner {
                 // Thiết lập look and feel
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 
-                // Khởi tạo socket handler
-                SocketHandler socketHandler = new SocketHandler();
+                // Lấy instance của socket handler
+                SocketHandler socketHandler = SocketHandler.getInstance();
                 
                 // Kết nối tới server
                 try {

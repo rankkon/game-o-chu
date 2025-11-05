@@ -1,8 +1,11 @@
 package controller;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.JOptionPane;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -11,8 +14,6 @@ import com.google.gson.JsonObject;
 import model.User;
 import util.UserParser;
 import view.LobbyFrame;
-import view.ProfileDialog;
-import javax.swing.JOptionPane;
 
 public class LobbyController implements SocketHandler.SocketListener {
     private final SocketHandler socketHandler;
@@ -73,6 +74,12 @@ public class LobbyController implements SocketHandler.SocketListener {
             case "USER_PROFILE_RESPONSE":
                 handleUserProfileResponse(data);
                 break;
+            case "MATCH_HISTORY":
+                handleMatchHistory(data);
+                break;
+            case "RANKING_UPDATE":
+                handleRankingUpdate(data);
+                break;
             case "USER_ONLINE":
                 handleUserOnline(data);
                 break;
@@ -113,75 +120,89 @@ public class LobbyController implements SocketHandler.SocketListener {
     }
     
     private void handleOnlineUsersResponse(JsonObject data) {
-        onlineUsers.clear();
-        JsonArray usersArray = data.getAsJsonArray("users");
-        
-        for (JsonElement userElement : usersArray) {
-            JsonObject userObject = userElement.getAsJsonObject();
-            User user = UserParser.parseFromJson(userObject);
-            onlineUsers.add(user);
-        }
-        
-        if (lobbyFrame != null) {
-            lobbyFrame.updateOnlineUsers(onlineUsers);
+        try {
+            JsonArray usersArray = data.getAsJsonArray("users");
+            List<User> updatedUsers = new ArrayList<>();
+            
+            for (JsonElement userElement : usersArray) {
+                JsonObject userObject = userElement.getAsJsonObject();
+                User user = UserParser.parseFromJson(userObject);
+                updatedUsers.add(user);
+            }
+            
+            // Update local list and UI atomically
+            synchronized (onlineUsers) {
+                onlineUsers.clear();
+                onlineUsers.addAll(updatedUsers);
+                if (lobbyFrame != null) {
+                    lobbyFrame.updateOnlineUsers(onlineUsers);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling online users response: " + e.getMessage());
+            if (lobbyFrame != null) {
+                lobbyFrame.showError("Không thể cập nhật danh sách người chơi trực tuyến");
+            }
         }
     }
     
     private void handleUserProfileResponse(JsonObject data) {
-        String status = data.get("status").getAsString();
-        
-        if ("success".equals(status) && lobbyFrame != null) {
-            JsonObject userObject = data.getAsJsonObject("user");
-            User user = UserParser.parseFromJson(userObject);
+        try {
+            String status = data.get("status").getAsString();
             
-            ProfileDialog dialog = new ProfileDialog(lobbyFrame, user);
-            dialog.setVisible(true);
-        } else if (!"success".equals(status) && lobbyFrame != null) {
-            String errorMessage = data.get("message").getAsString();
-            lobbyFrame.showError(errorMessage);
+            if ("success".equals(status) && lobbyFrame != null) {
+                JsonObject userObject = data.getAsJsonObject("user");
+                User user = UserParser.parseFromJson(userObject);
+                lobbyFrame.showProfile(user);
+            } else if (!"success".equals(status) && lobbyFrame != null) {
+                String errorMessage = data.get("message").getAsString();
+                lobbyFrame.showError(errorMessage);
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling user profile response: " + e.getMessage());
+            if (lobbyFrame != null) {
+                lobbyFrame.showError("Không thể hiển thị thông tin người chơi");
+            }
         }
     }
     
     private void handleUserOnline(JsonObject data) {
-        JsonObject userObject = data.getAsJsonObject("user");
-        int userId = userObject.get("id").getAsInt();
-        
-        // Check if user already in list
-        boolean found = false;
-        for (User user : onlineUsers) {
-            if (user.getId() == userId) {
-                found = true;
-                break;
-            }
-        }
-        
-        if (!found) {
-            User user = UserParser.parseFromJson(userObject);
-            onlineUsers.add(user);
+        try {
+            JsonObject userObject = data.getAsJsonObject("user");
+            int userId = userObject.get("id").getAsInt();
             
-            if (lobbyFrame != null) {
-                lobbyFrame.updateOnlineUsers(onlineUsers);
+            synchronized (onlineUsers) {
+                // Check if user already in list
+                boolean found = onlineUsers.stream()
+                        .anyMatch(user -> user.getId() == userId);
+                
+                if (!found) {
+                    User user = UserParser.parseFromJson(userObject);
+                    onlineUsers.add(user);
+                    
+                    if (lobbyFrame != null) {
+                        lobbyFrame.updateOnlineUsers(onlineUsers);
+                    }
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Error handling user online event: " + e.getMessage());
         }
     }
     
     private void handleUserOffline(JsonObject data) {
-        int userId = data.get("userId").getAsInt();
-        
-        User userToRemove = null;
-        for (User user : onlineUsers) {
-            if (user.getId() == userId) {
-                userToRemove = user;
-                break;
-            }
-        }
-        
-        if (userToRemove != null) {
-            onlineUsers.remove(userToRemove);
+        try {
+            int userId = data.get("userId").getAsInt();
             
-            if (lobbyFrame != null) {
-                lobbyFrame.updateOnlineUsers(onlineUsers);
+            synchronized (onlineUsers) {
+                boolean removed = onlineUsers.removeIf(user -> user.getId() == userId);
+                
+                if (removed && lobbyFrame != null) {
+                    lobbyFrame.updateOnlineUsers(onlineUsers);
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Error handling user offline event: " + e.getMessage());
         }
     }
 
@@ -275,6 +296,9 @@ public class LobbyController implements SocketHandler.SocketListener {
 
         if (lobbyFrame != null) {
             lobbyFrame.showInfo("Kết thúc trận! Người thắng: " + winnerName);
+            // Cập nhật bảng xếp hạng và danh sách người chơi sau khi kết thúc trận
+            requestRankingUpdate();
+            requestOnlineUsers();
         }
         if (gameFrame != null) {
             // Show result in GameFrame before closing
@@ -296,12 +320,18 @@ public class LobbyController implements SocketHandler.SocketListener {
     }
 
     private void handleLeaveRoom(JsonObject data) {
-        if (gameFrame != null) {
-            gameFrame.dispose();
-            gameFrame = null;
-        }
-        if (lobbyFrame != null) {
-            lobbyFrame.showInfo("Đã thoát phòng trận đấu");
+        try {
+            if (gameFrame != null) {
+                gameFrame.dispose();
+                gameFrame = null;
+            }
+            if (lobbyFrame != null) {
+                lobbyFrame.showInfo("Đã thoát phòng trận đấu");
+                // Refresh online users list when leaving room
+                requestOnlineUsers();
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling leave room event: " + e.getMessage());
         }
     }
 
@@ -336,5 +366,119 @@ public class LobbyController implements SocketHandler.SocketListener {
     
     public List<User> getOnlineUsers() {
         return onlineUsers;
+    }
+
+    public void requestRankingUpdate() {
+        socketHandler.sendMessage("GET_RANKINGS", null);
+    }
+
+    private void handleMatchHistory(JsonObject data) {
+        if (lobbyFrame != null && data != null) {
+            List<model.Match> matches = new ArrayList<>();
+            
+            if (data.has("matches") && !data.get("matches").isJsonNull()) {
+                try {
+                    JsonArray matchesArray = data.getAsJsonArray("matches");
+                    System.out.println("Received matches JSON: " + matchesArray.toString());
+                    
+                    for (JsonElement element : matchesArray) {
+                        JsonObject matchObj = element.getAsJsonObject();
+                        try {
+                            // Get required fields with null checks
+                            int matchId = matchObj.has("matchId") ? matchObj.get("matchId").getAsInt() : 0;
+                            String player1Name = matchObj.has("player1Name") ? matchObj.get("player1Name").getAsString() : "Unknown";
+                            String player2Name = matchObj.has("player2Name") ? matchObj.get("player2Name").getAsString() : "Unknown";
+                            int player1Score = matchObj.has("player1Score") ? matchObj.get("player1Score").getAsInt() : 0;
+                            int player2Score = matchObj.has("player2Score") ? matchObj.get("player2Score").getAsInt() : 0;
+                            
+                            // Get startTime with fallback
+                            long startTimeMs = matchObj.has("startTime") ? matchObj.get("startTime").getAsLong() : 
+                                             matchObj.has("matchDate") ? matchObj.get("matchDate").getAsLong() : 
+                                             System.currentTimeMillis();
+                            Date matchDate = new Date(startTimeMs);
+                            
+                            // Determine result based on winner
+                            String result;
+                            if (matchObj.has("winnerName") && !matchObj.get("winnerName").isJsonNull()) {
+                                String winnerName = matchObj.get("winnerName").getAsString();
+                                result = winnerName.equals(player1Name) ? "WIN" : "LOSE";
+                            } else {
+                                // If scores are equal, it's a draw
+                                result = (player1Score == player2Score) ? "DRAW" : 
+                                        (player1Score > player2Score) ? "WIN" : "LOSE";
+                            }
+                            
+                            String category = matchObj.has("category") ? matchObj.get("category").getAsString() : "Không xác định";
+                            String chatLog = matchObj.has("chatLog") ? matchObj.get("chatLog").getAsString() : "";
+                            String opponentName = matchObj.has("opponentName") ? matchObj.get("opponentName").getAsString() : player2Name;
+
+                            model.Match match = new model.Match(
+                                matchId,
+                                category,
+                                player1Name,
+                                player2Name,
+                                player1Score,
+                                player2Score,
+                                matchDate,
+                                result,
+                                chatLog,
+                                opponentName
+                            );
+                            matches.add(match);
+                            
+                        } catch (Exception e) {
+                            System.err.println("Error parsing match: " + e.getMessage() + 
+                                            "\nMatch data: " + matchObj.toString());
+                            // Continue with next match
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error parsing match array: " + e.getMessage() + 
+                                     "\nReceived data: " + data.toString());
+                }
+            } else {
+                System.err.println("No matches found in response or matches array is null");
+            }
+            
+            lobbyFrame.showMatchHistory(matches);
+        } else {
+            System.err.println("LobbyFrame is null or received data is null");
+        }
+    }
+    
+    public void showMatchHistory() {
+        socketHandler.sendMessage("GET_MATCH_HISTORY", null);
+    }
+    
+    private void handleRankingUpdate(JsonObject data) {
+        if (lobbyFrame != null) {
+            JsonArray rankingsArray = data.has("data") && data.getAsJsonObject("data").has("rankings") 
+                ? data.getAsJsonObject("data").getAsJsonArray("rankings") 
+                : data.has("rankings") 
+                    ? data.getAsJsonArray("rankings") 
+                    : new JsonArray();
+            
+            List<model.Ranking> rankings = new ArrayList<>();
+            
+            int rank = 1;
+            for (JsonElement element : rankingsArray) {
+                JsonObject rankObj = element.getAsJsonObject();
+                try {
+                    model.Ranking ranking = new model.Ranking(
+                        rank++,
+                        rankObj.get("username").getAsString(),
+                        rankObj.get("totalMatches").getAsInt(),
+                        rankObj.get("wonMatches").getAsInt(),
+                        rankObj.get("totalScore").getAsInt(),
+                        rankObj.has("avgTimeRemaining") ? rankObj.get("avgTimeRemaining").getAsDouble() : 0.0
+                    );
+                    rankings.add(ranking);
+                } catch (Exception e) {
+                    System.err.println("Error parsing ranking data: " + e.getMessage());
+                }
+            }
+            
+            lobbyFrame.updateRankings(rankings);
+        }
     }
 }

@@ -102,7 +102,7 @@ game-o-chu/
 │   │   │
 │   │   ├── controller/                    # Giao tiếp socket + điều phối UI
 │   │   │   ├── ClientMain.java            # Entry point client
-│   │   │   ├── NetworkClient.java         # Kết nối socket tới server
+│   │   │   ├── SocketHandler.java         # Kết nối socket tới server
 │   │   │   ├── MessageListener.java       # Lắng nghe message từ server (thread)
 │   │   │   └── UIController.java          # Cập nhật UI dựa trên event server
 │   │   │

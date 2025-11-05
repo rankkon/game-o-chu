@@ -1,6 +1,7 @@
 package view;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -32,6 +33,11 @@ public class LobbyFrame extends JFrame {
     private final JLabel statusLabel;
     private JList<User> onlineUsersList;
     private DefaultListModel<User> onlineUsersModel;
+    private CardLayout cardLayout;
+    private JPanel centerCardPanel;
+    private RankingPanel rankingPanel;
+    private ProfilePanel profilePanel;
+    private MatchHistoryPanel historyPanel;
 
     public LobbyFrame(LobbyController controller, User currentUser) {
         this.controller = controller;
@@ -50,18 +56,31 @@ public class LobbyFrame extends JFrame {
         JPanel topPanel = createTopPanel();
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Center panel: game options + online users
-        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 30, 0));
+        // Center panel with CardLayout
+        cardLayout = new CardLayout();
+        centerCardPanel = new JPanel(cardLayout);
 
-        // Left: Game options
+        // Game panel
+        JPanel gamePanel = new JPanel(new GridLayout(1, 2, 30, 0));
         JPanel gameOptionsPanel = createGameOptionsPanel();
-        centerPanel.add(gameOptionsPanel);
-
-        // Right: Online users
         JPanel onlineUsersPanel = createOnlineUsersPanel();
-        centerPanel.add(onlineUsersPanel);
+        gamePanel.add(gameOptionsPanel);
+        gamePanel.add(onlineUsersPanel);
+        centerCardPanel.add(gamePanel, "GAME");
 
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
+        // Ranking panel
+        rankingPanel = new RankingPanel(e -> showGamePanel());
+        centerCardPanel.add(rankingPanel, "RANKING");
+
+        // Profile panel
+        profilePanel = new ProfilePanel(e -> showGamePanel());
+        centerCardPanel.add(profilePanel, "PROFILE");
+
+        // Match History panel
+        historyPanel = new MatchHistoryPanel(e -> showGamePanel());
+        centerCardPanel.add(historyPanel, "HISTORY");
+
+        mainPanel.add(centerCardPanel, BorderLayout.CENTER);
 
         // Status bar
         statusLabel = new JLabel("Đã kết nối. Chào mừng " + currentUser.getName() + "!");
@@ -72,6 +91,10 @@ public class LobbyFrame extends JFrame {
         mainPanel.add(statusLabel, BorderLayout.SOUTH);
 
         add(mainPanel);
+        
+        // Request initial data
+        controller.requestOnlineUsers();
+        controller.requestRankingUpdate();
     }
 
     private JPanel createTopPanel() {
@@ -115,20 +138,22 @@ public class LobbyFrame extends JFrame {
         Font mainButtonFont = new Font("Arial", Font.BOLD, 20);
         Dimension mainButtonSize = new Dimension(250, 50);
 
-        JButton createGameButton = new JButton("Tạo trận đấu mới");
+        JButton createGameButton = new JButton("Ghép đấu");
         createGameButton.setFont(mainButtonFont);
         createGameButton.setPreferredSize(mainButtonSize);
 
-        JButton quickMatchButton = new JButton("Ghép đấu nhanh");
-        quickMatchButton.setFont(mainButtonFont);
-        quickMatchButton.setPreferredSize(mainButtonSize);
+        JButton historyButton = new JButton("Lịch sử trận đấu");
+        historyButton.setFont(mainButtonFont);
+        historyButton.setPreferredSize(mainButtonSize);
+        historyButton.addActionListener(e -> controller.showMatchHistory());
 
         JButton rankingButton = new JButton("Xem bảng xếp hạng");
         rankingButton.setFont(mainButtonFont);
         rankingButton.setPreferredSize(mainButtonSize);
+        rankingButton.addActionListener(e -> showRankingPanel());
 
         buttonPanel.add(createGameButton);
-        buttonPanel.add(quickMatchButton);
+        buttonPanel.add(historyButton);
         buttonPanel.add(rankingButton);
 
         panel.add(buttonPanel, BorderLayout.CENTER);
@@ -205,6 +230,34 @@ public class LobbyFrame extends JFrame {
 
     public void showInfo(String message) {
         JOptionPane.showMessageDialog(this, message, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showGamePanel() {
+        cardLayout.show(centerCardPanel, "GAME");
+    }
+
+    private void showRankingPanel() {
+        cardLayout.show(centerCardPanel, "RANKING");
+    }
+
+    public void showProfile(User user) {
+        profilePanel.updateProfile(user);
+        cardLayout.show(centerCardPanel, "PROFILE");
+    }
+
+    public void updateRankings(List<model.Ranking> rankings) {
+        if (rankings != null && !rankings.isEmpty()) {
+            rankingPanel.updateRankings(rankings);
+            // Highlight người chơi hiện tại nếu có trong danh sách
+            rankingPanel.highlightCurrentPlayer(currentUser.getName());
+        }
+    }
+
+    public void showMatchHistory(List<model.Match> matches) {
+        if (matches != null) {
+            historyPanel.updateMatchHistory(matches);
+            cardLayout.show(centerCardPanel, "HISTORY");
+        }
     }
 
     private class UserListCellRenderer extends DefaultListCellRenderer {

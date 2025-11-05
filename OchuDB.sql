@@ -21,10 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     Score DOUBLE NOT NULL DEFAULT 1000,     
     MatchCount INT DEFAULT 0,
     WinCount INT DEFAULT 0,
-    DrawCount INT DEFAULT 0,
     LoseCount INT DEFAULT 0,
-    CurrentStreak INT DEFAULT 0,
-    Rank INT NOT NULL DEFAULT -1,
     Blocked TINYINT(1) DEFAULT 0
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
@@ -33,12 +30,12 @@ CREATE TABLE IF NOT EXISTS users (
 -- ===============================
 --  DỮ LIỆU NGƯỜI DÙNG MẪU
 -- ===============================
-INSERT INTO users (Username, Password, Avatar, Name, Gender, YearOfBirth, Rank)
+INSERT INTO users (Username, Password, Avatar, Name, Gender, YearOfBirth)
 VALUES 
-('admin', 'admin123', 'admin.png', 'Administrator', 'Nam', 2004, 0),
-('viet1', '123456', 'viet.png', 'Cao Đức Việt', 'Nam', 2004, 0),
-('trung1', '123456', 'trung.png', 'Nguyễn Công Trung', 'Nam', 2004, 0),
-('han1', '123456', 'han.png', 'Đinh Ngọc Hân', 'Nam', 2004, 0);
+('admin', 'admin123', 'admin.png', 'Administrator', 'Nam', 2004),
+('viet1', '123456', 'viet.png', 'Cao Đức Việt', 'Nam', 2004),
+('trung1', '123456', 'trung.png', 'Nguyễn Công Trung', 'Nam', 2004),
+('han1', '123456', 'han.png', 'Đinh Ngọc Hân', 'Nam', 2004);
 
 -- ===============================
 --  BẢNG TRẬN ĐẤU (game_match)

@@ -25,6 +25,7 @@ public class ServerMain {
     private UserService userService;
     private DictionaryService dictionaryService;
     private MatchService matchService;
+    private MatchHistoryController matchHistoryController;
     private final List<ClientHandler> clientHandlers;
     private final Map<Integer, ClientHandler> userIdToHandler;
     
@@ -34,6 +35,7 @@ public class ServerMain {
         userService = new UserService();
         dictionaryService = new DictionaryService();
         matchService = new MatchService(dictionaryService, userService);
+        matchHistoryController = new MatchHistoryController(userService);
         clientHandlers = new ArrayList<>();
         userIdToHandler = new HashMap<>();
 

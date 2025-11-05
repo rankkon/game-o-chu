@@ -13,6 +13,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class SocketHandler {
+    private static SocketHandler instance;
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
@@ -20,6 +21,15 @@ public class SocketHandler {
     private boolean running = false;
     private final Gson gson = new Gson();
     
+    private SocketHandler() {}
+
+    public static synchronized SocketHandler getInstance() {
+        if (instance == null) {
+            instance = new SocketHandler();
+        }
+        return instance;
+    }
+
     public void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
         out = new PrintWriter(socket.getOutputStream(), true);
