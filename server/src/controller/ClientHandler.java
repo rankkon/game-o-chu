@@ -114,6 +114,8 @@ public class ClientHandler implements Runnable {
         try {
             String username = json.get("username").getAsString();
             String password = json.get("password").getAsString();
+            String fullName = json.get("fullName").getAsString();
+            int yearOfBirth = json.get("yearOfBirth").getAsInt(); 
 
             // Validation cơ bản
             if (username == null || username.trim().isEmpty()) {
@@ -124,9 +126,17 @@ public class ClientHandler implements Runnable {
                 send(makeResponse("REGISTER_RESPONSE", "error", "Mật khẩu không được để trống"));
                 return;
             }
+            if (fullName == null || fullName.trim().isEmpty()) {
+                send(makeResponse("REGISTER_RESPONSE", "error", "Họ tên không được để trống"));
+                return;
+            }
+            if (yearOfBirth < 1900 || yearOfBirth > 2024) {
+                send(makeResponse("REGISTER_RESPONSE", "error", "Năm sinh không hợp lệ"));
+                return;
+            }
             
             // Gọi AuthService (đã có sẵn)
-            boolean success = authService.register(username.trim(), password);
+            boolean success = authService.register(username.trim(), password, fullName.trim(), yearOfBirth);
 
             if (success) {
                 send(makeResponse("REGISTER_RESPONSE", "success", "Đăng ký thành công!"));
