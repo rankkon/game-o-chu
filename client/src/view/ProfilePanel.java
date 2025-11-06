@@ -35,7 +35,6 @@ public class ProfilePanel extends JPanel {
     private JLabel lblGenderValue;
     private JLabel lblYearOfBirthValue;
     private JLabel lblScoreValue;
-    private JLabel lblRankValue;
     private JLabel lblWinCountValue;
     private JLabel lblLoseCountValue;
     private JLabel lblMatchCountValue;
@@ -51,14 +50,21 @@ public class ProfilePanel extends JPanel {
         setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JPanel topPanel = new JPanel(new BorderLayout(15, 0)); 
+
+        JPanel avatarWrapper = new JPanel(new BorderLayout(0, 5));
         
         // Avatar
-        JPanel avatarWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER));
         lblAvatar = new JLabel();
         lblAvatar.setHorizontalAlignment(JLabel.CENTER);
         lblAvatar.setVerticalAlignment(JLabel.CENTER);
         lblAvatar.setPreferredSize(new Dimension(80, 80));
-        avatarWrapper.add(lblAvatar);
+        avatarWrapper.add(lblAvatar, BorderLayout.CENTER);
+
+        changeAvatarButton = new JButton("Đổi Avatar");
+        changeAvatarButton.setFont(new Font("Arial", Font.BOLD, 12)); 
+        changeAvatarButton.addActionListener(this::showAvatarMenu);
+        avatarWrapper.add(changeAvatarButton, BorderLayout.SOUTH);
+
         topPanel.add(avatarWrapper, BorderLayout.WEST);
 
         JPanel userInfoTopPanel = new JPanel(new GridLayout(2, 1)); 
@@ -73,7 +79,7 @@ public class ProfilePanel extends JPanel {
         userInfoTopPanel.add(lblNameTop);
         topPanel.add(userInfoTopPanel, BorderLayout.CENTER);
         
-        add(topPanel, BorderLayout.NORTH); // Đặt topPanel lên trên cùng
+        add(topPanel, BorderLayout.NORTH);
 
         // --- CONTENT PANEL: Thông tin chi tiết ---
         contentPanel = new JPanel(new GridLayout(0, 2, 10, 8));
@@ -84,7 +90,6 @@ public class ProfilePanel extends JPanel {
         lblGenderValue = new JLabel();
         lblYearOfBirthValue = new JLabel();
         lblScoreValue = new JLabel();
-        lblRankValue = new JLabel();
         lblWinCountValue = new JLabel();
         lblLoseCountValue = new JLabel();
         lblMatchCountValue = new JLabel();
@@ -98,7 +103,6 @@ public class ProfilePanel extends JPanel {
         addDetailField(contentPanel, "Giới tính", lblGenderValue, labelFont, valueFont);
         addDetailField(contentPanel, "Năm sinh", lblYearOfBirthValue, labelFont, valueFont);
         addDetailField(contentPanel, "Điểm số", lblScoreValue, labelFont, valueFont);
-        addDetailField(contentPanel, "Xếp hạng", lblRankValue, labelFont, valueFont);
         addDetailField(contentPanel, "Số trận thắng", lblWinCountValue, labelFont, valueFont);
         addDetailField(contentPanel, "Số trận thua", lblLoseCountValue, labelFont, valueFont);
         addDetailField(contentPanel, "Tổng số trận", lblMatchCountValue, labelFont, valueFont);
@@ -106,13 +110,8 @@ public class ProfilePanel extends JPanel {
         
         add(contentPanel, BorderLayout.CENTER);
 
-        // --- BOTTOM PANEL: Nút Quay lại/Đổi avatar ---
+        // --- BOTTOM PANEL: Nút Quay lại ---
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-        changeAvatarButton = new JButton("Đổi Avatar");
-        changeAvatarButton.setFont(new Font("Arial", Font.BOLD, 14));
-        changeAvatarButton.addActionListener(this::showAvatarMenu);
-        controlPanel.add(changeAvatarButton);
 
         JButton backButton = new JButton("Quay lại");
         backButton.setFont(new Font("Arial", Font.BOLD, 14));
@@ -136,12 +135,6 @@ public class ProfilePanel extends JPanel {
         lblGenderValue.setText(user.getGender());
         lblYearOfBirthValue.setText(String.valueOf(user.getYearOfBirth()));
         lblScoreValue.setText(String.format("%,.0f", user.getScore()));
-        
-        if (user.getRank() > 0) {
-            lblRankValue.setText("#" + user.getRank());
-        } else {
-            lblRankValue.setText("N/A");
-        }
         
         lblWinCountValue.setText(String.format("%,d", user.getWinCount()));
         lblLoseCountValue.setText(String.format("%,d", user.getLoseCount()));
