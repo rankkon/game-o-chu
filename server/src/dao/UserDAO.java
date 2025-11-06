@@ -161,4 +161,22 @@ public class UserDAO {
         user.setBlocked(rs.getBoolean("Blocked"));
         return user;
     }
+
+    public boolean updateAvatar(int userId, String avatarFilename) {
+        String sql = "UPDATE users SET Avatar = ? WHERE ID = ?";
+        
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, avatarFilename);
+            ps.setInt(2, userId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0; 
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

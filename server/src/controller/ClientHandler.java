@@ -99,6 +99,9 @@ public class ClientHandler implements Runnable {
                 case "GET_MATCH_HISTORY":
                     handleGetMatchHistory(json);
                     break;
+                case "UPDATE_AVATAR":
+                    handleUpdateAvatar(json);
+                    break;
                 default:
                     sendError("Unknown request type: " + type);
                     break;
@@ -218,6 +221,32 @@ public class ClientHandler implements Runnable {
             send(response);
         } else {
             sendError("User not found");
+        }
+    }
+
+    private void handleUpdateAvatar(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        
+        try {
+            String avatarFile = json.get("avatar").getAsString();
+
+            int userId = currentUser.getId();
+
+            boolean success = userService.updateUserAvatar(userId, avatarFile);
+            
+            if (success) {
+                this.currentUser.setAvatar(avatarFile);
+                send(makeResponse("AVATAR_UPDATE_RESPONSE", "success"));
+            } else {
+                sendError("Cập nhật avatar thất bại trong CSDL");
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError("Lỗi khi xử lý cập nhật avatar: " + e.getMessage());
         }
     }
 

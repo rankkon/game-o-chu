@@ -36,6 +36,12 @@ public class UserService {
         return users != null ? users : new ArrayList<>();
     }
 
+    //Cập nhật avatar cho user trong CSDL.
+    public boolean updateUserAvatar(int userId, String avatarFilename) {
+        // Gọi hàm đã có sẵn trong UserDAO
+        return userDAO.updateAvatar(userId, avatarFilename);
+    }
+
     // ------------------ Online user management ------------------
     public boolean addOnlineUser(User user) {
         return onlineUsers.putIfAbsent(user.getId(), user) == null;
