@@ -59,6 +59,14 @@ public class LobbyController implements SocketHandler.SocketListener {
         authController.logout();
     }
 
+    public void requestMatchmaking() {
+        socketHandler.sendMessage("MATCHMAKE_START", null);
+    }
+
+    public void cancelMatchmaking() {
+        socketHandler.sendMessage("MATCHMAKE_CANCEL", null);
+    }
+
     public void sendInvite(int toUserId) {
         JsonObject data = new JsonObject();
         data.addProperty("toUserId", toUserId);
@@ -85,6 +93,12 @@ public class LobbyController implements SocketHandler.SocketListener {
                 break;
             case "USER_OFFLINE":
                 handleUserOffline(data);
+                break;
+            case "MATCHMAKE_WAITING":
+                handleMatchmakeWaiting(data);
+                break;
+            case "MATCHMAKE_CANCELED":
+                handleMatchmakeCanceled(data);
                 break;
             case "INVITE_REQUEST":
                 handleInviteRequest(data);
@@ -163,6 +177,20 @@ public class LobbyController implements SocketHandler.SocketListener {
             if (lobbyFrame != null) {
                 lobbyFrame.showError("Không thể hiển thị thông tin người chơi");
             }
+        }
+    }
+
+    private void handleMatchmakeWaiting(JsonObject data) {
+        if (lobbyFrame != null) {
+            // Cập nhật UI sang trạng thái "Đang chờ"
+            lobbyFrame.setMatchmakingStatus(true);
+        }
+    }
+
+    private void handleMatchmakeCanceled(JsonObject data) {
+        if (lobbyFrame != null) {
+            // Cập nhật UI về trạng thái "Rảnh"
+            lobbyFrame.setMatchmakingStatus(false);
         }
     }
     
@@ -246,6 +274,10 @@ public class LobbyController implements SocketHandler.SocketListener {
     }
 
     private void handleMatchStart(JsonObject data) {
+        if (lobbyFrame != null) {
+            lobbyFrame.setMatchmakingStatus(false);
+        }
+        
         if (gameFrame == null) {
             gameFrame = new view.GameFrame();
             gameFrame.setSelfUserId(currentUser.getId());

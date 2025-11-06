@@ -13,6 +13,9 @@ import model.PlayerState;
 import model.WordInstance;
 import util.JsonUtil;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+import controller.ClientHandler;
+
 /**
  * MatchService xử lý toàn bộ logic tạo phòng, bắt đầu trận đấu, chấm điểm và kết thúc.
  */
@@ -28,6 +31,8 @@ public class MatchService {
     private final UserService userService;
     private final dao.MatchDAO matchDAO = new dao.MatchDAO();
     private final dao.CategoryDAO categoryDAO = new dao.CategoryDAO();
+
+    private static Queue<Integer> matchmakingQueue = new ConcurrentLinkedQueue<>();
 
     public MatchService(DictionaryService dictionaryService, UserService userService) {
         this.dictionaryService = dictionaryService;
@@ -165,6 +170,81 @@ public class MatchService {
         try {
             startMatch(roomId, Integer.parseInt(opponentId));
         } catch (NumberFormatException ignored) {}
+    }
+
+        /**
+     * Thêm người chơi vào hàng chờ ghép đấu.
+     * Cần 'synchronized' để đảm bảo 2 thread không cùng lúc poll() và add().
+     */
+    public synchronized void addPlayerToMatchmaking(int playerId, ClientHandler handler) {
+        // Kiểm tra xem đã ở trong hàng chờ chưa
+        if (matchmakingQueue.contains(playerId)) {
+            // Đã ở trong hàng chờ, không làm gì cả
+            handler.sendMessage("{\"type\": \"ERROR\", \"message\": \"Bạn đã ở trong hàng chờ.\"}");
+            return;
+        }
+        // 2. Kiểm tra xem người chơi có đang trong trận khác không (ví dụ: vừa accept invite)
+        // if (userService.isUserInMatch(playerId)) {
+        //     handler.sendMessage("{\"type\": \"ERROR\", \"message\": \"Bạn đang trong trận đấu.\"}");
+        //     return;
+        // }
+
+        // Thêm vào hàng chờ và thông báo cho client
+        matchmakingQueue.add(playerId);
+        // Gửi phản hồi cho client "đang chờ"
+        handler.sendMessage("{\"type\": \"MATCHMAKE_WAITING\"}");
+        System.out.println("User ID " + playerId + " đã vào hàng chờ. Hàng chờ: " + matchmakingQueue.size());
+
+        // Kiểm tra xem có đủ người để ghép cặp không
+        tryFindAndStartMatch();
+    }
+
+    /**
+     * Xóa người chơi khỏi hàng chờ (hủy hoặc disconnect)
+     */
+    public synchronized void removePlayerFromMatchmaking(int playerId, ClientHandler handler) {
+        boolean removed = matchmakingQueue.remove(playerId);
+        
+        // Nếu 'handler' khác null, nghĩa là đây là một yêu cầu HỦY chủ động
+        // (Nếu 'handler' là null, nghĩa là gọi từ 'cleanup' do disconnect)
+        if (removed && handler != null) { 
+            handler.sendMessage("{\"type\": \"MATCHMAKE_CANCELED\"}");
+            System.out.println("User ID " + playerId + " đã rời hàng chờ (chủ động).");
+        }
+    }
+
+    /**
+     * Hàm private, tự động chạy để tìm 2 người trong hàng chờ và ghép cặp
+     */
+    private synchronized void tryFindAndStartMatch() {
+        if (matchmakingQueue.size() >= 2) {
+            System.out.println("Tìm thấy 2 người chơi! Đang bắt đầu trận đấu...");
+
+            Integer player1Id = matchmakingQueue.poll();
+            Integer player2Id = matchmakingQueue.poll();
+
+            if (player1Id == null || player2Id == null) return; // Kiểm tra an toàn
+
+            // Kiểm tra xem 2 người chơi có còn online không (lỡ 1 người disconnect)
+            if (!userService.isUserOnline(player1Id)) {
+                if (userService.isUserOnline(player2Id)) matchmakingQueue.add(player2Id); // Trả người 2 về hàng chờ
+                System.out.println("Người chơi 1 (ID: " + player1Id + ") đã disconnect, hủy ghép cặp.");
+                return;
+            }
+            if (!userService.isUserOnline(player2Id)) {
+                if (userService.isUserOnline(player1Id)) matchmakingQueue.add(player1Id); // Trả người 1 về hàng chờ
+                System.out.println("Người chơi 2 (ID: " + player2Id + ") đã disconnect, hủy ghép cặp.");
+                return;
+            }
+
+            // === TÁI SỬ DỤNG LOGIC "MỜI ĐẤU" ===
+            // Cả 2 đều online, tạo phòng và bắt đầu trận
+            System.out.println("Ghép cặp " + player1Id + " và " + player2Id);
+            model.MatchRoom room = createRoom(player1Id);
+            
+            // Hàm startMatch này sẽ tự động gửi "match_start" cho cả 2 client
+            startMatch(room.getRoomId(), player2Id);
+        }
     }
 
     /**

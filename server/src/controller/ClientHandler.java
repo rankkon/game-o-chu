@@ -102,6 +102,12 @@ public class ClientHandler implements Runnable {
                 case "UPDATE_AVATAR":
                     handleUpdateAvatar(json);
                     break;
+                case "MATCHMAKE_START":
+                    handleMatchmakeStart();
+                    break;
+                case "MATCHMAKE_CANCEL":
+                    handleMatchmakeCancel();
+                    break;
                 default:
                     sendError("Unknown request type: " + type);
                     break;
@@ -250,6 +256,22 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private void handleMatchmakeStart() {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        matchService.addPlayerToMatchmaking(currentUser.getId(), this);
+    }
+
+    private void handleMatchmakeCancel() {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        matchService.removePlayerFromMatchmaking(currentUser.getId(), this);
+    }
+
     // ------------------- Invite handlers -------------------
 
     private void handleInviteSend(JsonObject json) {
@@ -395,6 +417,7 @@ public class ClientHandler implements Runnable {
 
     private void cleanup() {
         if (currentUser != null) {
+            matchService.removePlayerFromMatchmaking(currentUser.getId(), null);
             userService.removeOnlineUser(currentUser.getId());
             broadcastUserOffline(currentUser);
             serverMain.unregisterClient(currentUser.getId());

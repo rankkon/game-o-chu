@@ -101,9 +101,9 @@ game-o-chu/
 │   │   │   └── HistoryDialog.java         # Lịch sử trận đấu
 │   │   │
 │   │   ├── controller/                    # Giao tiếp socket + điều phối UI
-│   │   │   ├── ClientMain.java            # Entry point client
+│   │   │   ├── LobbyController.java      
 │   │   │   ├── SocketHandler.java         # Kết nối socket tới server
-│   │   │   ├── MessageListener.java       # Lắng nghe message từ server (thread)
+│   │   │   ├── AuthController.java
 │   │   │   └── UIController.java          # Cập nhật UI dựa trên event server
 │   │   │
 │   │   ├── model/                         # Mô hình phía client

@@ -38,6 +38,11 @@ public class LobbyFrame extends JFrame {
     private RankingPanel rankingPanel;
     private ProfilePanel profilePanel;
     private MatchHistoryPanel historyPanel;
+    private JPanel matchmakingCardPanel;
+    private CardLayout matchmakingCardLayout;
+    private JButton btnMatchmake;
+    private JButton btnCancelMatchmake;
+    private JLabel lblMatchmakeStatus;
 
     public LobbyFrame(LobbyController controller, User currentUser) {
         this.controller = controller;
@@ -132,15 +137,38 @@ public class LobbyFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Tùy chọn trận đấu"));
 
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 0, 20));
-        buttonPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        matchmakingCardLayout = new CardLayout();
+        matchmakingCardPanel = new JPanel(matchmakingCardLayout);
 
         Font mainButtonFont = new Font("Arial", Font.BOLD, 20);
         Dimension mainButtonSize = new Dimension(250, 50);
 
-        JButton createGameButton = new JButton("Ghép đấu");
-        createGameButton.setFont(mainButtonFont);
-        createGameButton.setPreferredSize(mainButtonSize);
+        JPanel matchmakeIdlePanel = new JPanel(new BorderLayout());
+        btnMatchmake = new JButton("Ghép đấu");
+        btnMatchmake.setFont(mainButtonFont);
+        btnMatchmake.setPreferredSize(mainButtonSize);
+        btnMatchmake.addActionListener(e -> controller.requestMatchmaking());
+        matchmakeIdlePanel.add(btnMatchmake, BorderLayout.CENTER);
+
+        JPanel matchmakeWaitingPanel = new JPanel(new BorderLayout(10, 10));
+        matchmakeWaitingPanel.setBorder(new EmptyBorder(5, 5, 5, 5)); // Thêm chút padding
+        btnCancelMatchmake = new JButton("Hủy tìm trận");
+        btnCancelMatchmake.setFont(mainButtonFont);
+        btnCancelMatchmake.setPreferredSize(mainButtonSize);
+        btnCancelMatchmake.addActionListener(e -> controller.cancelMatchmaking());
+
+        lblMatchmakeStatus = new JLabel("Đang tìm trận...", JLabel.CENTER);
+        lblMatchmakeStatus.setFont(new Font("Arial", Font.ITALIC, 16));
+
+        matchmakeWaitingPanel.add(lblMatchmakeStatus, BorderLayout.NORTH);
+        matchmakeWaitingPanel.add(btnCancelMatchmake, BorderLayout.CENTER);
+
+        matchmakingCardPanel.add(matchmakeIdlePanel, "IDLE");
+        matchmakingCardPanel.add(matchmakeWaitingPanel, "WAITING");
+        matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
+
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 0, 20));
+        buttonPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
 
         JButton historyButton = new JButton("Lịch sử trận đấu");
         historyButton.setFont(mainButtonFont);
@@ -152,7 +180,7 @@ public class LobbyFrame extends JFrame {
         rankingButton.setPreferredSize(mainButtonSize);
         rankingButton.addActionListener(e -> showRankingPanel());
 
-        buttonPanel.add(createGameButton);
+        buttonPanel.add(matchmakingCardPanel);
         buttonPanel.add(historyButton);
         buttonPanel.add(rankingButton);
 
@@ -221,6 +249,14 @@ public class LobbyFrame extends JFrame {
         onlineUsersModel.clear();
         for (User user : users) {
             onlineUsersModel.addElement(user);
+        }
+    }
+
+    public void setMatchmakingStatus(boolean isWaiting) {
+        if (isWaiting) {
+            matchmakingCardLayout.show(matchmakingCardPanel, "WAITING");
+        } else {
+            matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
         }
     }
 
