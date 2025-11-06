@@ -26,7 +26,7 @@ public class AuthService {
      * @param password plain text password
      * @return true if successful, false otherwise
      */
-    public boolean register(String username, String password, String fullName, int yearOfBirth) {
-        return userDAO.register(username, password, fullName, yearOfBirth);
+    public boolean register(String username, String password, String fullName, int yearOfBirth, String gender) {
+        return userDAO.register(username, password, fullName, yearOfBirth, gender);
     }
 }

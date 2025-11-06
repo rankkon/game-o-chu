@@ -116,6 +116,7 @@ public class ClientHandler implements Runnable {
             String password = json.get("password").getAsString();
             String fullName = json.get("fullName").getAsString();
             int yearOfBirth = json.get("yearOfBirth").getAsInt(); 
+            String gender = json.get("gender").getAsString();
 
             // Validation cơ bản
             if (username == null || username.trim().isEmpty()) {
@@ -136,7 +137,7 @@ public class ClientHandler implements Runnable {
             }
             
             // Gọi AuthService (đã có sẵn)
-            boolean success = authService.register(username.trim(), password, fullName.trim(), yearOfBirth);
+            boolean success = authService.register(username.trim(), password, fullName.trim(), yearOfBirth, gender);
 
             if (success) {
                 send(makeResponse("REGISTER_RESPONSE", "success", "Đăng ký thành công!"));

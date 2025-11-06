@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users (Username, Password, Avatar, Name, Gender, YearOfBirth)
 VALUES 
 ('admin', 'admin123', 'admin.png', 'Administrator', 'Nam', 2004),
-('viet1', '123456', 'viet.png', 'Cao Đức Việt', 'Nam', 2004),
-('trung1', '123456', 'trung.png', 'Nguyễn Công Trung', 'Nam', 2004),
-('han1', '123456', 'han.png', 'Đinh Ngọc Hân', 'Nam', 2004);
+('viet1', '123456', 'icons8_alien_96px.png', 'Cao Đức Việt', 'Nam', 2004),
+('trung1', '123456', 'icons8_alien_96px.png', 'Nguyễn Công Trung', 'Nam', 2004),
+('han1', '123456', 'icons8_alien_96px.png', 'Đinh Ngọc Hân', 'Nam', 2004);
 
 -- ===============================
 --  BẢNG TRẬN ĐẤU (game_match)

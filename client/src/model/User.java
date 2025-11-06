@@ -2,9 +2,9 @@ package model;
 
 public class User {
     private int id;
-    private String username = "#"; // giá trị mặc định
+    private String username = "#";
     private String name = "#";
-    private String avatar = "default_avatar.png";
+    private String avatar = "icons8_alien_96px.png";
     private String gender = "Nam";
     private int yearOfBirth = 2004;
 

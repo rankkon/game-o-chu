@@ -31,12 +31,13 @@ public class AuthController implements SocketHandler.SocketListener {
         socketHandler.sendMessage("LOGIN", data);
     }
     
-    public void register(String username, String password, String fullName, int yearOfBirth) {
+    public void register(String username, String password, String fullName, int yearOfBirth, String gender) {
         JsonObject data = new JsonObject();
         data.addProperty("username", username);
         data.addProperty("password", password);
         data.addProperty("fullName", fullName); 
         data.addProperty("yearOfBirth", yearOfBirth);
+        data.addProperty("gender", gender);
         SocketHandler.getInstance().sendMessage("REGISTER", data);
     }
 

@@ -103,7 +103,7 @@ public class UserDAO {
         return users;
     }
     
-    public boolean register(String username, String password, String fullName, int yearOfBirth) {
+    public boolean register(String username, String password, String fullName, int yearOfBirth, String gender) {
         try (Connection conn = DBConnection.getInstance().getConnection()) {
             // Check if username already exists
             String checkSql = "SELECT COUNT(*) FROM users WHERE Username=?";
@@ -120,10 +120,10 @@ public class UserDAO {
             String insertSql = "INSERT INTO users (Username, Password, Name, Avatar, Gender, YearOfBirth, Score, MatchCount, WinCount, DrawCount, LoseCount, CurrentStreak, Rank, Blocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
                 insertPs.setString(1, username);
-                insertPs.setString(2, password); // Store plain text password for BTL
-                insertPs.setString(3, fullName); // Default name same as username
-                insertPs.setString(4, "default_avatar.png");
-                insertPs.setString(5, "Nam");
+                insertPs.setString(2, password);
+                insertPs.setString(3, fullName);
+                insertPs.setString(4, "icons8_alien_96px.png");
+                insertPs.setString(5, gender);
                 insertPs.setInt(6, yearOfBirth);
                 insertPs.setDouble(7, 1000.0);
                 insertPs.setInt(8, 0);

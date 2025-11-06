@@ -8,6 +8,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -35,7 +36,8 @@ public class LoginFrame extends JFrame {
     private JPasswordField regPasswordField;
     private JPasswordField regConfirmPasswordField;
     private JTextField regFullNameField;
-    private JTextField regYearOfBirthField; 
+    private JTextField regYearOfBirthField;
+    private JComboBox<String> regGenderComboBox;
     
     public LoginFrame(AuthController authController) {
         this.authController = authController;
@@ -133,7 +135,7 @@ public class LoginFrame extends JFrame {
     private JPanel createRegisterPanel() {
         JPanel formPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 20, 10, 20); // Giảm insets
+        gbc.insets = new Insets(10, 20, 10, 20); 
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
         int y = 0;
@@ -179,7 +181,7 @@ public class LoginFrame extends JFrame {
         formPanel.add(regConfirmPasswordField, gbc);
         y++;
 
-        // Họ tên (Mới)
+        // Họ tên 
         gbc.gridx = 0;
         gbc.gridy = y;
         JLabel fullNameLabel = new JLabel("Họ và Tên:");
@@ -192,7 +194,7 @@ public class LoginFrame extends JFrame {
         formPanel.add(regFullNameField, gbc);
         y++;
 
-        // Năm sinh (Mới)
+        // Năm sinh 
         gbc.gridx = 0;
         gbc.gridy = y;
         JLabel yearLabel = new JLabel("Năm sinh:");
@@ -204,6 +206,18 @@ public class LoginFrame extends JFrame {
         regYearOfBirthField.setFont(new Font("Arial", Font.PLAIN, 24));
         formPanel.add(regYearOfBirthField, gbc);
         y++;
+
+        gbc.gridx = 0; gbc.gridy = y;
+        JLabel genderLabel = new JLabel("Giới tính:");
+        genderLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        formPanel.add(genderLabel, gbc);
+
+        gbc.gridx = 1;
+        String[] genders = {"Nam", "Nữ", "Khác"};
+        regGenderComboBox = new JComboBox<>(genders);
+        regGenderComboBox.setFont(new Font("Arial", Font.PLAIN, 24));
+        formPanel.add(regGenderComboBox, gbc);
+        y++; 
 
         // Nút Đăng ký
         gbc.gridx = 0;
@@ -255,6 +269,7 @@ public class LoginFrame extends JFrame {
         String confirmPassword = new String(regConfirmPasswordField.getPassword());
         String fullName = regFullNameField.getText().trim();
         String yearStr = regYearOfBirthField.getText().trim();
+        String gender = (String) regGenderComboBox.getSelectedItem();
 
         // Validate
         if (username.isEmpty() || password.isEmpty() || fullName.isEmpty() || yearStr.isEmpty()) {
@@ -269,7 +284,7 @@ public class LoginFrame extends JFrame {
         int yearOfBirth;
         try {
             yearOfBirth = Integer.parseInt(yearStr);
-            if (yearOfBirth < 1900 || yearOfBirth > 2024) { // Giới hạn hợp lý
+            if (yearOfBirth < 1900 || yearOfBirth > 2024) { 
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
@@ -277,13 +292,11 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        // Gọi AuthController để gửi request đăng ký với các trường mới
-        authController.register(username, password, fullName, yearOfBirth);
+        // Gọi AuthController để gửi request đăng ký
+        authController.register(username, password, fullName, yearOfBirth, gender);
     }
     
     public void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
-
-    // XÓA PHƯƠNG THỨC showRegisterDialog() CŨ
 }
