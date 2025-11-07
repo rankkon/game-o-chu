@@ -43,7 +43,6 @@ public class LobbyFrame extends JFrame {
     private JButton btnMatchmake;
     private JButton btnCancelMatchmake;
     private JLabel lblMatchmakeStatus;
-    private JButton inviteButton;
 
     public LobbyFrame(LobbyController controller, User currentUser) {
         this.controller = controller;
@@ -218,7 +217,7 @@ public class LobbyFrame extends JFrame {
         Font smallButtonFont = new Font("Arial", Font.BOLD, 16);
         Dimension smallButtonSize = new Dimension(120, 40);
 
-        inviteButton = new JButton("Mời đấu");
+        JButton inviteButton = new JButton("Mời đấu");
         inviteButton.setFont(smallButtonFont);
         inviteButton.setPreferredSize(smallButtonSize);
         inviteButton.addActionListener(e -> {
@@ -314,51 +313,5 @@ public class LobbyFrame extends JFrame {
 
             return label;
         }
-    }
-
-    public void updateButtonsForReconnect(String reconnectMatchId) {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            // TRƯỜNG HỢP 1: CÓ TRẬN ĐỂ KẾT NỐI LẠI
-            if (reconnectMatchId != null) {
-                
-                // Ẩn nút "Mời đấu"
-                if (inviteButton != null) {
-                    inviteButton.setVisible(false);
-                }
-                matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
-
-                btnMatchmake.setText("Kết nối lại trận đấu");
-
-                //    Gỡ tất cả listener cũ để tránh gọi nhầm
-                for (java.awt.event.ActionListener al : btnMatchmake.getActionListeners()) {
-                    btnMatchmake.removeActionListener(al);
-                }
-                
-                //    Thêm listener mới cho RECONNECT
-                btnMatchmake.addActionListener(e -> {
-                    controller.requestReconnect(); 
-                });
-
-            } 
-            // TRƯỜNG HỢP 2: TRẠNG THÁI BÌNH THƯỜNG
-            else { 
-                // Hiện lại nút "Mời đấu"
-                if (inviteButton != null) {
-                    inviteButton.setVisible(true);
-                }
-
-                // 2. Gỡ listener "Reconnect"
-                for (java.awt.event.ActionListener al : btnMatchmake.getActionListeners()) {
-                    btnMatchmake.removeActionListener(al);
-                }
-
-                btnMatchmake.addActionListener(e -> controller.requestMatchmaking());
-                
-                // Reset text về "Ghép đấu"
-                btnMatchmake.setText("Ghép đấu"); 
-
-                setMatchmakingStatus(false); 
-            }
-        });
     }
 }

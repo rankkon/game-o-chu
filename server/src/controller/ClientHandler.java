@@ -49,9 +49,8 @@ public class ClientHandler implements Runnable {
                 handleMessage(message);
             }
         } catch (IOException e) {
-            System.out.println("Client disconnected (IOException): " + (currentUser != null ? currentUser.getUsername() : "Unknown") + " | " + e.getMessage());
+            System.out.println("Client disconnected: " + e.getMessage());
         } finally {
-            System.out.println("Cleaning up connection for: " + (currentUser != null ? currentUser.getUsername() : "Unknown"));
             cleanup();
         }
     }
@@ -108,12 +107,6 @@ public class ClientHandler implements Runnable {
                     break;
                 case "MATCHMAKE_CANCEL":
                     handleMatchmakeCancel();
-                    break;
-                case "RECONNECT_MATCH":
-                    handleReconnectMatch(json);
-                    break;
-                case "REQUEST_EXIT_MATCH":
-                    handleRequestExitMatch(json);
                     break;
                 default:
                     sendError("Unknown request type: " + type);
@@ -191,21 +184,8 @@ public class ClientHandler implements Runnable {
                 // Register mapping for direct messaging
                 serverMain.registerClient(user.getId(), this);
 
-                String reconnectMatchId = null;
-                model.MatchRoom match = matchService.findReconnectableMatch(user.getId());
-                if (match != null) {
-                    reconnectMatchId = match.getRoomId();
-                    System.out.println("[ClientHandler] User " + user.getUsername() + " logging in, found reconnectable match: " + reconnectMatchId);
-                }
-
                 JsonObject response = makeResponse("LOGIN_RESPONSE", "success");
                 response.add("user", JsonParser.parseString(JsonUtil.toJson(user)));
-
-                if (reconnectMatchId != null) {
-                    response.addProperty("reconnectMatchId", reconnectMatchId);
-                } else {
-                    response.add("reconnectMatchId", com.google.gson.JsonNull.INSTANCE);
-                }
                 send(response);
 
                 broadcastUserOnline(user);
@@ -290,41 +270,6 @@ public class ClientHandler implements Runnable {
             return;
         }
         matchService.removePlayerFromMatchmaking(currentUser.getId(), this);
-    }
-
-    private void handleReconnectMatch(JsonObject json) {
-        if (currentUser == null) {
-            sendError("Chưa đăng nhập");
-            return;
-        }
-        try {
-            String roomId = json.get("roomId").getAsString();
-            matchService.handlePlayerReconnect(roomId, currentUser.getId());
-        } catch (Exception e) {
-            sendError("Lỗi khi kết nối lại: " + e.getMessage());
-        }
-    }
-
-    private void handleRequestExitMatch(JsonObject json) {
-        if (currentUser == null) return;
-        
-        // Báo cho MatchService biết user này "disconnect"
-        matchService.handlePlayerDisconnect(currentUser.getId());
-        
-        // Tìm lại matchId để gửi về client
-        String reconnectMatchId = null;
-        model.MatchRoom match = matchService.findReconnectableMatch(currentUser.getId());
-        if (match != null) {
-            reconnectMatchId = match.getRoomId();
-        }
-
-        // Gửi phản hồi cho client để client cập nhật UI
-        JsonObject response = new JsonObject();
-        response.addProperty("type", "EXIT_MATCH_ACK"); // Client sẽ lắng nghe 'EXIT_MATCH_ACK'
-        if (reconnectMatchId != null) {
-            response.addProperty("reconnectMatchId", reconnectMatchId);
-        }
-        send(response);
     }
 
     // ------------------- Invite handlers -------------------
@@ -472,7 +417,6 @@ public class ClientHandler implements Runnable {
 
     private void cleanup() {
         if (currentUser != null) {
-            matchService.handlePlayerDisconnect(currentUser.getId());
             matchService.removePlayerFromMatchmaking(currentUser.getId(), null);
             userService.removeOnlineUser(currentUser.getId());
             broadcastUserOffline(currentUser);

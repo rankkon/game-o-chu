@@ -252,11 +252,7 @@ public class MatchService {
      */
     public void handleLetterInput(String roomId, int playerId, int wordIdx, int charIdx, char ch) {
         MatchRoom room = rooms.get(roomId);
-        if (room == null || !("PLAYING".equals(room.getStatus()) || "PAUSED".equals(room.getStatus()))) return;
-
-        if ("PAUSED".equals(room.getStatus())) {
-            return;
-        }
+        if (room == null || !"PLAYING".equals(room.getStatus())) return;
 
         // Use player's personal copy of the word so each player has independent filled state
         PlayerState ps = room.getPlayers().get(playerId);
@@ -429,98 +425,4 @@ public class MatchService {
             userService.sendToUser(room.getOpponentId(), message);
         }
     }
-
-    /**
-     * Tìm trận đấu đang "PLAYING" hoặc "PAUSED" mà user này là 1 player
-     * và user này đang bị đánh dấu là "disconnected".
-     */
-    public MatchRoom findReconnectableMatch(int userId) {
-        for (MatchRoom match : rooms.values()) {
-            if (match.isPlayer(userId) &&
-                ("PLAYING".equals(match.getStatus()) || "PAUSED".equals(match.getStatus())) &&
-                match.getDisconnectedPlayerIDs().contains(userId)) 
-            {
-                return match;
-            }
-        }
-        return null;
-    }
-
-    public void handlePlayerDisconnect(int userId) {
-        // Tìm trận đấu "PLAYING" mà user này đang tham gia
-        MatchRoom activeMatch = null;
-        for (MatchRoom match : rooms.values()) {
-             if (match.isPlayer(userId) && "PLAYING".equals(match.getStatus())) {
-                 activeMatch = match;
-                 break;
-             }
-        }
-        
-        if (activeMatch != null) {
-            System.out.println("[MatchService] Handling disconnect for user " + userId + " in match " + activeMatch.getRoomId());
-            // Đánh dấu user này đã ngắt kết nối
-            activeMatch.getDisconnectedPlayerIDs().add(userId);
-            
-            // Tạm dừng game
-            activeMatch.setStatus("PAUSED");
-            
-            // Gửi thông báo cho người chơi còn lại
-            int opponentId = activeMatch.getOpponent(userId);
-            
-            // Chỉ gửi nếu đối thủ *không* nằm trong danh sách disconnect
-            if (!activeMatch.getDisconnectedPlayerIDs().contains(opponentId)) {
-                JsonObject payload = new JsonObject();
-                payload.addProperty("action", "OPPONENT_DISCONNECTED");
-                payload.addProperty("message", "Đối thủ đã mất kết nối. Đang chờ kết nối lại...");
-                // Gửi qua userService
-                userService.sendToUser(opponentId, JsonUtil.toJson(payload));
-            }
-        }
-    }
-    /**
-     * Xử lý khi người chơi gửi yêu cầu "RECONNECT_MATCH"
-     */
-    public void handlePlayerReconnect(String roomId, int userId) {
-        MatchRoom room = rooms.get(roomId);
-        if (room == null) return; // Trận đấu không còn
-
-        // Kiểm tra xem có đúng là trận này và user này đã disconnect không
-        if (room.isPlayer(userId) && 
-            ("PAUSED".equals(room.getStatus()) || "PLAYING".equals(room.getStatus())) && // Chấp nhận cả 2
-            room.getDisconnectedPlayerIDs().contains(userId)) {
-
-            System.out.println("[MatchService] Handling reconnect for user " + userId + " in match " + roomId);
-            
-            // Xóa user khỏi danh sách disconnect
-            room.getDisconnectedPlayerIDs().remove(userId);
-            
-            // Nếu không còn ai disconnect, set trạng thái lại "PLAYING"
-            if (room.getDisconnectedPlayerIDs().isEmpty()) {
-                room.setStatus("PLAYING");
-            }
-            
-            // Gửi lại trạng thái "match_start" cho người vừa reconnect
-            // Client sẽ dùng thông điệp này để mở GameFrame
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("action", "match_start");
-            payload.put("roomId", room.getRoomId());
-            payload.put("data", room.toDto()); // toDto() sẽ chứa trạng thái hiện tại
-            payload.put("isReconnect", true); // Thêm cờ để client biết đây là reconnect
-            
-            String json = JsonUtil.toJson(payload);
-            userService.sendToUser(userId, json); // Chỉ gửi cho người reconnect
-
-            // Gửi thông báo cho đối thủ (nếu họ vẫn ở đó)
-            int opponentId = room.getOpponent(userId);
-            if (!room.getDisconnectedPlayerIDs().contains(opponentId)) {
-                 JsonObject opponentPayload = new JsonObject();
-                 opponentPayload.addProperty("action", "OPPONENT_RECONNECTED");
-                 opponentPayload.addProperty("message", "Đối thủ đã kết nối lại. Trận đấu tiếp tục!");
-                 userService.sendToUser(opponentId, JsonUtil.toJson(opponentPayload));
-                 
-                 // Gửi cả match_update để đồng bộ (ví dụ: trạng thái PAUSED -> PLAYING)
-                 broadcastMatchUpdate(room);
-            }
-        }
-     }
 }
