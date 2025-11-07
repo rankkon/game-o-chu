@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import model.PlayerState;
+import model.WordInstance;
+
 public class MatchRoom {
     private String roomId;
     private Integer matchId; // DB-generated id for the persisted match record
@@ -76,7 +79,6 @@ public class MatchRoom {
             pd.put("score", ps.getScore());
             pd.put("correctWords", ps.getCorrectWords());
             pd.put("lastScoreAt", ps.getLastScoreAt());
-            pd.put("connectionStatus", ps.getConnectionStatus().toString());
             playersDto.put(String.valueOf(uid), pd);
         }
         dto.put("players", playersDto);

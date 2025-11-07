@@ -23,17 +23,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
-import com.google.gson.JsonObject;
-
 import controller.LobbyController;
-import controller.SocketHandler;
 import model.User;
 
-public class LobbyFrame extends JFrame implements SocketHandler.SocketListener {
+public class LobbyFrame extends JFrame {
     private final LobbyController controller;
     private final User currentUser;
-
-    private final SocketHandler socketHandler;
 
     private final JLabel statusLabel;
     private JList<User> onlineUsersList;
@@ -52,8 +47,6 @@ public class LobbyFrame extends JFrame implements SocketHandler.SocketListener {
     public LobbyFrame(LobbyController controller, User currentUser) {
         this.controller = controller;
         this.currentUser = currentUser;
-        this.socketHandler = SocketHandler.getInstance();
-        this.socketHandler.addListener(this);
 
         setTitle("Sảnh chờ - Game Ô Chữ");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -103,15 +96,6 @@ public class LobbyFrame extends JFrame implements SocketHandler.SocketListener {
         mainPanel.add(statusLabel, BorderLayout.SOUTH);
 
         add(mainPanel);
-
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                socketHandler.removeListener(LobbyFrame.this); // Hủy đăng ký
-                controller.logout(); // Kích hoạt logic logout (sẽ đóng app)
-            }
-        });
         
         // Request initial data
         controller.requestOnlineUsers();
@@ -140,10 +124,7 @@ public class LobbyFrame extends JFrame implements SocketHandler.SocketListener {
         JButton logoutButton = new JButton("Đăng xuất");
         logoutButton.setFont(smallButtonFont);
         logoutButton.setPreferredSize(new Dimension(120, 40));
-        logoutButton.addActionListener(e -> {
-            socketHandler.removeListener(this);
-            controller.logout();
-        });
+        logoutButton.addActionListener(e -> controller.logout());
 
         controlPanel.add(profileButton);
         controlPanel.add(logoutButton);
@@ -331,80 +312,6 @@ public class LobbyFrame extends JFrame implements SocketHandler.SocketListener {
             }
 
             return label;
-        }
-    }
-
-    @Override
-    public void onMessage(String type, JsonObject data) {
-        // Đảm bảo các thay đổi UI được thực hiện trên Event Dispatch Thread
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            switch (type) {
-                case "ACTIVE_MATCH_PENDING":
-                    // Server báo có trận đang chờ
-                    String roomId = data.get("roomId").getAsString();
-                    String opponentName = data.get("opponentName").getAsString();
-                    showReconnectPrompt(roomId, opponentName);
-                    break;
-                
-                case "reconnect_success":
-                    // Kết nối lại thành công, server trả về full data
-                    socketHandler.removeListener(this);
-                    
-                    // Ẩn lobby
-                    this.setVisible(false);
-                    
-                    MatchFrame matchFrame = new MatchFrame(socketHandler, currentUser.getId());
-                    matchFrame.setVisible(true);
-                    
-                    // Load dữ liệu vào MatchFrame
-                    matchFrame.loadMatchStart(data); 
-                    
-                    // Dispose LobbyFrame
-                    this.dispose();
-                    break;
-                    
-                case "LEAVE_MATCH_SUCCESS":
-                    // Server xác nhận đã rời trận thành công
-                    // Đảm bảo LobbyFrame được hiển thị 
-                    this.setVisible(true);
-                    this.requestFocus();
-                    break;
-            }
-        });
-    }
-
-    @Override
-    public void onDisconnect(String reason) {
-        showError("Mất kết nối tới server: " + reason + "\n Vui lòng khởi động lại.");
-        
-        // Hủy đăng ký listener
-        socketHandler.removeListener(this);
-        
-        // Đóng ứng dụng (hoặc quay về Login)
-        System.exit(1);
-    }
-
-    /**
-     *  Hiển thị prompt hỏi người dùng có muốn kết nối lại không.
-     */
-    private void showReconnectPrompt(String roomId, String opponentName) {
-        int choice = JOptionPane.showConfirmDialog(
-            this, 
-            "Bạn có một trận đấu đang dở với " + opponentName + ". Bạn có muốn kết nối lại?",
-            "Phát hiện trận đấu",
-            JOptionPane.YES_NO_OPTION
-        );
-        
-        if (choice == JOptionPane.YES_OPTION) {
-            // Gửi yêu cầu reconnect
-            JsonObject payload = new JsonObject();
-            payload.addProperty("roomId", roomId);
-            socketHandler.sendMessage("RECONNECT_MATCH", payload);
-        } else {
-            JsonObject payload = new JsonObject();
-            payload.addProperty("roomId", roomId);
-            // Gửi message "MATCH_END"
-            socketHandler.sendMessage("MATCH_END", payload); 
         }
     }
 }
