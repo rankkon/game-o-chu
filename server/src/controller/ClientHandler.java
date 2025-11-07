@@ -10,6 +10,7 @@ import java.util.List;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import model.MatchRoom;
 import model.User;
 import service.AuthService;
 import service.MatchService;
@@ -108,6 +109,12 @@ public class ClientHandler implements Runnable {
                 case "MATCHMAKE_CANCEL":
                     handleMatchmakeCancel();
                     break;
+                case "RECONNECT_MATCH":
+                    handleReconnectMatch(json);
+                    break;
+                case "REQUEST_EXIT_MATCH":
+                    handleRequestExitMatch(json);
+                    break;
                 default:
                     sendError("Unknown request type: " + type);
                     break;
@@ -186,6 +193,15 @@ public class ClientHandler implements Runnable {
 
                 JsonObject response = makeResponse("LOGIN_RESPONSE", "success");
                 response.add("user", JsonParser.parseString(JsonUtil.toJson(user)));
+                String reconnectMatchId = userService.getActiveMatchForUser(user.getId());
+                if (reconnectMatchId != null && matchService.roomExists(reconnectMatchId)) {
+                    // Chỉ thêm nếu trận đấu đó vẫn còn tồn tại
+                    response.addProperty("reconnectMatchId", reconnectMatchId);
+                } else {
+                    // Nếu không, xóa trạng thái
+                    userService.clearUserActiveMatch(user.getId());
+                    response.add("reconnectMatchId", com.google.gson.JsonNull.INSTANCE);
+                }
                 send(response);
 
                 broadcastUserOnline(user);
@@ -270,6 +286,48 @@ public class ClientHandler implements Runnable {
             return;
         }
         matchService.removePlayerFromMatchmaking(currentUser.getId(), this);
+    }
+
+    private void handleReconnectMatch(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        try {
+            String roomId = json.get("roomId").getAsString();
+            MatchRoom room = matchService.getRoom(roomId);
+
+            if (room != null && room.isPlayer(currentUser.getId())) {
+                // Gửi lại message "match_start" y hệt như lúc bắt đầu trận
+                // Client sẽ dùng thông điệp này để mở GameFrame
+                java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                payload.put("action", "match_start");
+                payload.put("roomId", room.getRoomId());
+                payload.put("data", room.toDto()); 
+                
+                String jsonPayload = JsonUtil.toJson(payload);
+                userService.sendToUser(currentUser.getId(), jsonPayload);
+            } else {
+                sendError("Không tìm thấy trận hoặc bạn không ở trong trận này.");
+            }
+        } catch (Exception e) {
+            sendError("Lỗi khi kết nối lại: " + e.getMessage());
+        }
+    }
+
+    private void handleRequestExitMatch(JsonObject json) {
+        if (currentUser == null) return;
+        
+        // Chỉ cần gửi lại ACK cho client biết là đã OK để về lobby
+        // và gửi kèm ID phòng để client biết trạng thái reconnect
+        String reconnectMatchId = userService.getActiveMatchForUser(currentUser.getId());
+
+        JsonObject response = new JsonObject();
+        response.addProperty("type", "EXIT_MATCH_ACK");
+        if (reconnectMatchId != null) {
+            response.addProperty("reconnectMatchId", reconnectMatchId);
+        }
+        send(response);
     }
 
     // ------------------- Invite handlers -------------------

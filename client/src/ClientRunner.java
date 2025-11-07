@@ -4,8 +4,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import controller.AuthController;
 import controller.SocketHandler;
+import controller.UIController;
 
 public class ClientRunner {
     private static final String DEFAULT_HOST = "localhost";
@@ -28,8 +28,7 @@ public class ClientRunner {
                     System.out.println("Đã kết nối thành công!");
                     
                     // Khởi tạo AuthController và hiển thị màn hình đăng nhập
-                    AuthController authController = new AuthController(socketHandler);
-                    authController.showLogin();
+                    new UIController(socketHandler);
                     
                 } catch (IOException e) {
                     JOptionPane.showMessageDialog(null, 

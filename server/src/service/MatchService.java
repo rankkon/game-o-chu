@@ -126,6 +126,9 @@ public class MatchService {
         ps1.setPersonalWords(copies1);
         ps2.setPersonalWords(copies2);
 
+        userService.setUserActiveMatch(room.getCreatorId(), roomId);
+        userService.setUserActiveMatch(room.getOpponentId(), roomId);
+
         // Lưu bản ghi match_start và lưu matchId trả về vào room để dùng khi kết thúc
         List<String> wordTexts = new ArrayList<>();
         for (WordInstance w : canonicalWords) wordTexts.add(w.getHint());
@@ -139,7 +142,7 @@ public class MatchService {
         Map<String, Object> payload = new HashMap<>();
         payload.put("action", "match_start");
         payload.put("roomId", room.getRoomId());
-    payload.put("data", room.toDto());
+        payload.put("data", room.toDto());
         String json = JsonUtil.toJson(payload);
         userService.sendToUser(room.getCreatorId(), json);
         userService.sendToUser(room.getOpponentId(), json);
@@ -363,6 +366,8 @@ public class MatchService {
         else if (p2.getScore() > p1.getScore()) winnerId = room.getOpponentId();
         else winnerId = (p1.getLastScoreAt() < p2.getLastScoreAt()) ? room.getCreatorId() : room.getOpponentId();
 
+        
+
         // remaining time only meaningful for the winner
         winnerTimeRemainingSec = (int) (remainingMs / 1000);
 
@@ -370,10 +375,13 @@ public class MatchService {
         room.setEndTime(now);
         room.setStatus("FINISHED");
 
-    // Update user stats: winner +100 score, both players MatchCount++ and Win/Lose++ accordingly
-    Integer loserId = (winnerId == room.getCreatorId()) ? room.getOpponentId() : room.getCreatorId();
-    userService.recordMatchResult(winnerId, loserId, 100);
+        // Update user stats: winner +100 score, both players MatchCount++ and Win/Lose++ accordingly
+        Integer loserId = (winnerId == room.getCreatorId()) ? room.getOpponentId() : room.getCreatorId();
+        userService.recordMatchResult(winnerId, loserId, 100);
 
+        userService.clearUserActiveMatch(room.getCreatorId());
+        userService.clearUserActiveMatch(room.getOpponentId());
+    
         // Persist end info to DB if we have a matchId
         Integer mid = room.getMatchId();
         if (mid != null) {

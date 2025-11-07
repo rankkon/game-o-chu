@@ -14,21 +14,21 @@ public class UIController {
 
     public UIController(SocketHandler socketHandler) {
         // Tạo AuthController và show login
-        this.authController = new AuthController(socketHandler);
+        this.authController = new AuthController(socketHandler, this);
         authController.showLogin();
     }
 
     /**
      * Gọi khi login thành công. AuthController sẽ pass User về đây để mở lobby.
      */
-    public void openLobby(User currentUser, SocketHandler socketHandler) {
+    public void openLobby(User currentUser, SocketHandler socketHandler, String reconnectMatchId) {
         SwingUtilities.invokeLater(() -> {
             // Nếu đã có lobby cũ, đóng trước
             if (lobbyController != null) {
                 lobbyController.closeLobby();
             }
             // Tạo LobbyController mới
-            lobbyController = new LobbyController(socketHandler, currentUser, authController);
+            lobbyController = new LobbyController(socketHandler, currentUser, authController, reconnectMatchId);
             lobbyController.openLobby();
         });
     }

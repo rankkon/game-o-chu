@@ -255,9 +255,9 @@ public class GameFrame extends javax.swing.JFrame {
             if (socketHandler != null) {
                 JsonObject payload = new JsonObject();
                 payload.addProperty("roomId", roomId);
-                socketHandler.sendMessage("LEAVE_ROOM", payload);
+                socketHandler.sendMessage("REQUEST_EXIT_MATCH", payload);
             }
-            dispose();
+            setVisible(false);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 

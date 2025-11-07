@@ -12,6 +12,7 @@ public class UserService {
     private final UserDAO userDAO;
     private final Map<Integer, User> onlineUsers;
     private MessageSender messageSender;
+    private final Map<Integer, String> userActiveMatch = new ConcurrentHashMap<>();
 
     public UserService() {
         this.userDAO = new UserDAO();
@@ -40,6 +41,16 @@ public class UserService {
     public boolean updateUserAvatar(int userId, String avatarFilename) {
         // Gọi hàm đã có sẵn trong UserDAO
         return userDAO.updateAvatar(userId, avatarFilename);
+    }
+
+    public void setUserActiveMatch(int userId, String roomId) {
+        userActiveMatch.put(userId, roomId);
+    }
+    public void clearUserActiveMatch(int userId) {
+        userActiveMatch.remove(userId);
+    }
+    public String getActiveMatchForUser(int userId) {
+        return userActiveMatch.get(userId);
     }
 
     // ------------------ Online user management ------------------

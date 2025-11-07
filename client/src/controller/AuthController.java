@@ -12,10 +12,11 @@ public class AuthController implements SocketHandler.SocketListener {
     private final SocketHandler socketHandler;
     private LoginFrame loginFrame;
     private User currentUser;
-    private LobbyController lobbyController;
+    private final UIController uiController;
     
-    public AuthController(SocketHandler socketHandler) {
+    public AuthController(SocketHandler socketHandler, UIController uiController) {
         this.socketHandler = socketHandler;
+        this.uiController = uiController;
         this.socketHandler.addListener(this);
     }
     
@@ -46,10 +47,10 @@ public class AuthController implements SocketHandler.SocketListener {
         currentUser = null;
         
         // Close lobby if open and show login screen
-        if (lobbyController != null) {
-            lobbyController.closeLobby();
-            lobbyController = null;
-        }
+        // if (lobbyController != null) {
+        //     lobbyController.closeLobby();
+        //     lobbyController = null;
+        // }
         showLogin();
     }
     
@@ -76,7 +77,7 @@ public class AuthController implements SocketHandler.SocketListener {
                     "Đăng ký thành công", 
                     JOptionPane.INFORMATION_MESSAGE);
         } else {
-            // Hiển thị lỗi (dùng lại hàm của LoginFrame)
+            // Hiển thị lỗi
             loginFrame.showError(message);
         }
     }
@@ -88,14 +89,19 @@ public class AuthController implements SocketHandler.SocketListener {
             // Parse user information using utility class
             JsonObject userData = data.getAsJsonObject("user");
             this.currentUser = UserParser.parseFromJson(userData);
+
+            String reconnectMatchId = null;
+            if (data.has("reconnectMatchId") && !data.get("reconnectMatchId").isJsonNull()) {
+                reconnectMatchId = data.get("reconnectMatchId").getAsString();
+                System.out.println("[AuthController] Login success, found reconnectMatchId: " + reconnectMatchId);
+            }
             
             // Close login frame
             loginFrame.dispose();
             loginFrame = null;
             
             // Open lobby
-            lobbyController = new LobbyController(socketHandler, currentUser, this);
-            lobbyController.openLobby();
+            uiController.openLobby(currentUser, socketHandler, reconnectMatchId);
         } else {
             // Show error message
             String errorMessage = data.get("message").getAsString();
@@ -111,10 +117,10 @@ public class AuthController implements SocketHandler.SocketListener {
     @Override
     public void onDisconnect(String reason) {
         // Handle disconnect, e.g. show reconnect dialog
-        if (lobbyController != null) {
-            lobbyController.closeLobby();
-            lobbyController = null;
-        }
+        // if (lobbyController != null) {
+        //     lobbyController.closeLobby();
+        //     lobbyController = null;
+        // }
         
         if (loginFrame != null) {
             loginFrame.showError("Mất kết nối đến máy chủ: " + reason);

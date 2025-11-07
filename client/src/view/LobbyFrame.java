@@ -43,6 +43,7 @@ public class LobbyFrame extends JFrame {
     private JButton btnMatchmake;
     private JButton btnCancelMatchmake;
     private JLabel lblMatchmakeStatus;
+    private JButton inviteButton;
 
     public LobbyFrame(LobbyController controller, User currentUser) {
         this.controller = controller;
@@ -217,7 +218,7 @@ public class LobbyFrame extends JFrame {
         Font smallButtonFont = new Font("Arial", Font.BOLD, 16);
         Dimension smallButtonSize = new Dimension(120, 40);
 
-        JButton inviteButton = new JButton("Mời đấu");
+        inviteButton = new JButton("Mời đấu");
         inviteButton.setFont(smallButtonFont);
         inviteButton.setPreferredSize(smallButtonSize);
         inviteButton.addActionListener(e -> {
@@ -253,11 +254,67 @@ public class LobbyFrame extends JFrame {
     }
 
     public void setMatchmakingStatus(boolean isWaiting) {
+        if (controller != null && controller.getReconnectMatchId() != null) {
+            matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
+            return; 
+        }
         if (isWaiting) {
             matchmakingCardLayout.show(matchmakingCardPanel, "WAITING");
         } else {
             matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
         }
+    }
+
+    public void updateButtonsForReconnect(String reconnectMatchId) {
+        // Đảm bảo code này chạy trên Event Dispatch Thread
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            
+            // TRƯỜNG HỢP 1: CÓ TRẬN ĐỂ KẾT NỐI LẠI
+            if (reconnectMatchId != null) {
+                
+                // 1. Ẩn nút "Mời đấu"
+                if (inviteButton != null) {
+                    inviteButton.setVisible(false);
+                }
+                
+                // 2. Chuyển về "IDLE" (để đảm bảo không bị kẹt ở "Đang tìm trận")
+                matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
+
+                // 3. Thay đổi nút "Ghép đấu" -> "Kết nối lại"
+                btnMatchmake.setText("Kết nối lại trận đấu");
+
+                // 4. Gỡ listener cũ và thêm listener "Reconnect" MỚI
+                for (java.awt.event.ActionListener al : btnMatchmake.getActionListeners()) {
+                    btnMatchmake.removeActionListener(al);
+                }
+                btnMatchmake.addActionListener(e -> {
+                    controller.requestReconnect(); 
+                });
+
+            } 
+            // TRƯỜNG HỢP 2: TRẠNG THÁI BÌNH THƯỜNG
+            else { 
+                
+                // 1. Hiện lại nút "Mời đấu"
+                if (inviteButton != null) {
+                    inviteButton.setVisible(true);
+                }
+
+                // 2. Gỡ listener "Reconnect" (nếu có)
+                for (java.awt.event.ActionListener al : btnMatchmake.getActionListeners()) {
+                    btnMatchmake.removeActionListener(al);
+                }
+                
+                // 3. Thêm lại listener "Ghép đấu" (listener gốc)
+                btnMatchmake.addActionListener(e -> controller.requestMatchmaking());
+                
+                // 4. Reset text về "Ghép đấu"
+                btnMatchmake.setText("Ghép đấu"); 
+                
+                // 5. Đưa về trạng thái "IDLE"
+                setMatchmakingStatus(false); 
+            }
+        });
     }
 
     public void showError(String message) {

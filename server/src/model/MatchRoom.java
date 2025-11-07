@@ -4,9 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import model.PlayerState;
-import model.WordInstance;
-
 public class MatchRoom {
     private String roomId;
     private Integer matchId; // DB-generated id for the persisted match record
@@ -46,6 +43,7 @@ public class MatchRoom {
     public void setCategoryCode(String categoryCode) { this.categoryCode = categoryCode; }
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+    public boolean isPlayer(int userId) {return this.creatorId == userId || this.opponentId == userId;}
 
     public Map<String, Object> toDto() {
         Map<String, Object> dto = new HashMap<>();
