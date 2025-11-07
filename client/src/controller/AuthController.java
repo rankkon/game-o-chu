@@ -13,9 +13,11 @@ public class AuthController implements SocketHandler.SocketListener {
     private LoginFrame loginFrame;
     private User currentUser;
     private LobbyController lobbyController;
+    private final UIController uiController;
     
-    public AuthController(SocketHandler socketHandler) {
+    public AuthController(SocketHandler socketHandler, UIController uiController) {
         this.socketHandler = socketHandler;
+        this.uiController = uiController;
         this.socketHandler.addListener(this);
     }
     
@@ -88,13 +90,19 @@ public class AuthController implements SocketHandler.SocketListener {
             // Parse user information using utility class
             JsonObject userData = data.getAsJsonObject("user");
             this.currentUser = UserParser.parseFromJson(userData);
+
+            String reconnectMatchId = null;
+            if (data.has("reconnectMatchId") && !data.get("reconnectMatchId").isJsonNull()) {
+                reconnectMatchId = data.get("reconnectMatchId").getAsString();
+                System.out.println("[AuthController] Login success, found reconnectMatchId: " + reconnectMatchId);
+            }
             
             // Close login frame
             loginFrame.dispose();
             loginFrame = null;
             
             // Open lobby
-            lobbyController = new LobbyController(socketHandler, currentUser, this);
+            lobbyController = new LobbyController(socketHandler, currentUser, this, reconnectMatchId);
             lobbyController.openLobby();
         } else {
             // Show error message

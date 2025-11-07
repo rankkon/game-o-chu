@@ -3,9 +3,8 @@ package model;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import model.PlayerState;
-import model.WordInstance;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MatchRoom {
     private String roomId;
@@ -19,6 +18,7 @@ public class MatchRoom {
     private String categoryName;
     private List<WordInstance> words;
     private Map<Integer, PlayerState> players = new HashMap<>();
+    private Set<Integer> disconnectedPlayerIDs = ConcurrentHashMap.newKeySet();
 
     public MatchRoom(String roomId, int creatorId) {
         this.roomId = roomId;
@@ -46,6 +46,17 @@ public class MatchRoom {
     public void setCategoryCode(String categoryCode) { this.categoryCode = categoryCode; }
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+
+    
+    public Set<Integer> getDisconnectedPlayerIDs() {
+        return disconnectedPlayerIDs;
+    }
+    public boolean isPlayer(int userId) {
+        return creatorId == userId || opponentId == userId;
+    }
+    public int getOpponent(int userId) {
+        return (creatorId == userId) ? opponentId : creatorId;
+    }
 
     public Map<String, Object> toDto() {
         Map<String, Object> dto = new HashMap<>();

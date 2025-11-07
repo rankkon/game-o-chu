@@ -22,20 +22,41 @@ public class LobbyController implements SocketHandler.SocketListener {
     private LobbyFrame lobbyFrame;
     private view.GameFrame gameFrame;
     private final List<User> onlineUsers = new ArrayList<>();
+    private String reconnectMatchId;
     
-    public LobbyController(SocketHandler socketHandler, User currentUser, AuthController authController) {
+    public LobbyController(SocketHandler socketHandler, User currentUser, AuthController authController, String reconnectMatchId) {
         this.socketHandler = socketHandler;
         this.currentUser = currentUser;
         this.authController = authController;
+        this.reconnectMatchId = reconnectMatchId;
         this.socketHandler.addListener(this);
     }
     
     public void openLobby() {
         lobbyFrame = new LobbyFrame(this, currentUser);
+        lobbyFrame.updateButtonsForReconnect(this.reconnectMatchId);
         lobbyFrame.setVisible(true);
         
         // Request list of online users
         requestOnlineUsers();
+    }
+
+    public String getReconnectMatchId() {
+        return this.reconnectMatchId;
+    }
+
+    public void requestReconnect() {
+        if (this.reconnectMatchId != null) {
+            JsonObject data = new JsonObject();
+            data.addProperty("roomId", this.reconnectMatchId);
+            socketHandler.sendMessage("RECONNECT_MATCH", data);
+        }
+    }
+
+    public void requestExitMatch(String roomId) {
+        JsonObject data = new JsonObject();
+        data.addProperty("roomId", roomId);
+        socketHandler.sendMessage("REQUEST_EXIT_MATCH", data);
     }
     
     public void closeLobby() {
@@ -110,12 +131,20 @@ public class LobbyController implements SocketHandler.SocketListener {
                 handleInviteResponse(data);
                 break;
             case "match_start":
+                this.reconnectMatchId = null;
+                if (lobbyFrame != null) {
+                    lobbyFrame.updateButtonsForReconnect(null);
+                }
                 handleMatchStart(data);
                 break;
             case "match_update":
                 handleMatchUpdate(data);
                 break;
             case "match_result":
+                this.reconnectMatchId = null;
+                if (lobbyFrame != null) {
+                    lobbyFrame.updateButtonsForReconnect(null);
+                }
                 handleMatchResult(data);
                 break;
             case "CHAT_MESSAGE":
@@ -129,6 +158,19 @@ public class LobbyController implements SocketHandler.SocketListener {
                 break;
             case "WORD_INCORRECT":
                 handleWordIncorrect(data);
+                break;
+            case "OPPONENT_DISCONNECTED":
+                if (gameFrame != null) {
+                    gameFrame.showGameMessage("Đối thủ đã mất kết nối. Đang chờ...");
+                }
+                break;
+            case "OPPONENT_RECONNECTED":
+                 if (gameFrame != null) {
+                    gameFrame.showGameMessage("Đối thủ đã kết nối lại. Trận đấu tiếp tục!");
+                }
+                break;
+            case "EXIT_MATCH_ACK":
+                handleExitMatchAck(data);
                 break;
         }
     }
@@ -360,10 +402,37 @@ public class LobbyController implements SocketHandler.SocketListener {
             if (lobbyFrame != null) {
                 lobbyFrame.showInfo("Đã thoát phòng trận đấu");
                 // Refresh online users list when leaving room
-                requestOnlineUsers();
+                handleExitMatchAck(data);
             }
         } catch (Exception e) {
             System.err.println("Error handling leave room event: " + e.getMessage());
+        }
+    }
+
+    private void handleExitMatchAck(JsonObject data) {
+        // 1. Đóng GameFrame
+        if (gameFrame != null) {
+            gameFrame.dispose();
+            gameFrame = null;
+        }
+        // 2. Mở LobbyFrame (nếu đang bị ẩn/null)
+        if (lobbyFrame == null) {
+            // (Constructor mới đã yêu cầu reconnectId, nên chúng ta cần set trước)
+            if (data.has("reconnectMatchId") && !data.get("reconnectMatchId").isJsonNull()) {
+                this.reconnectMatchId = data.get("reconnectMatchId").getAsString();
+            } else {
+                this.reconnectMatchId = null;
+            }
+             openLobby(); // Hàm này sẽ tự động đọc this.reconnectMatchId
+        } else {
+            lobbyFrame.setVisible(true);
+            // 3. Cập nhật reconnectId và UI
+            if (data.has("reconnectMatchId") && !data.get("reconnectMatchId").isJsonNull()) {
+                this.reconnectMatchId = data.get("reconnectMatchId").getAsString();
+            } else {
+                this.reconnectMatchId = null;
+            }
+            lobbyFrame.updateButtonsForReconnect(this.reconnectMatchId);
         }
     }
 
