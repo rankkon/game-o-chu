@@ -86,8 +86,9 @@ public class LoginFrame extends JFrame {
 
         gbc.gridx = 1;
         gbc.weightx = 0.5;
-        loginUsernameField = new JTextField();
+        loginUsernameField = new JTextField(); 
         loginUsernameField.setFont(new Font("Arial", Font.PLAIN, 28));
+        loginUsernameField.addActionListener(e -> loginPasswordField.requestFocusInWindow());
         formPanel.add(loginUsernameField, gbc);
 
         // Mật khẩu
@@ -102,6 +103,7 @@ public class LoginFrame extends JFrame {
         gbc.weightx = 0.5;
         loginPasswordField = new JPasswordField();
         loginPasswordField.setFont(new Font("Arial", Font.PLAIN, 28));
+        loginPasswordField.addActionListener(e -> handleLogin());
         formPanel.add(loginPasswordField, gbc);
 
         // Nút đăng nhập
@@ -152,6 +154,7 @@ public class LoginFrame extends JFrame {
         gbc.weightx = 0.5;
         regUsernameField = new JTextField();
         regUsernameField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regUsernameField.addActionListener(e -> regPasswordField.requestFocusInWindow());
         formPanel.add(regUsernameField, gbc);
         y++;
 
@@ -165,6 +168,7 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         regPasswordField = new JPasswordField();
         regPasswordField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regPasswordField.addActionListener(e -> regConfirmPasswordField.requestFocusInWindow());
         formPanel.add(regPasswordField, gbc);
         y++;
 
@@ -178,6 +182,7 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         regConfirmPasswordField = new JPasswordField();
         regConfirmPasswordField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regConfirmPasswordField.addActionListener(e -> regFullNameField.requestFocusInWindow());
         formPanel.add(regConfirmPasswordField, gbc);
         y++;
 
@@ -191,22 +196,11 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1;
         regFullNameField = new JTextField();
         regFullNameField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regFullNameField.addActionListener(e -> regYearOfBirthField.requestFocusInWindow());
         formPanel.add(regFullNameField, gbc);
         y++;
 
-        // Năm sinh 
-        gbc.gridx = 0;
-        gbc.gridy = y;
-        JLabel yearLabel = new JLabel("Năm sinh:");
-        yearLabel.setFont(new Font("Arial", Font.PLAIN, 24));
-        formPanel.add(yearLabel, gbc);
-
-        gbc.gridx = 1;
-        regYearOfBirthField = new JTextField();
-        regYearOfBirthField.setFont(new Font("Arial", Font.PLAIN, 24));
-        formPanel.add(regYearOfBirthField, gbc);
-        y++;
-
+        // Giới tính
         gbc.gridx = 0; gbc.gridy = y;
         JLabel genderLabel = new JLabel("Giới tính:");
         genderLabel.setFont(new Font("Arial", Font.PLAIN, 24));
@@ -218,6 +212,20 @@ public class LoginFrame extends JFrame {
         regGenderComboBox.setFont(new Font("Arial", Font.PLAIN, 24));
         formPanel.add(regGenderComboBox, gbc);
         y++; 
+
+        // Năm sinh 
+        gbc.gridx = 0;
+        gbc.gridy = y;
+        JLabel yearLabel = new JLabel("Năm sinh:");
+        yearLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        formPanel.add(yearLabel, gbc);
+
+        gbc.gridx = 1;
+        regYearOfBirthField = new JTextField();
+        regYearOfBirthField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regYearOfBirthField.addActionListener(e -> handleRegister());
+        formPanel.add(regYearOfBirthField, gbc);
+        y++;
 
         // Nút Đăng ký
         gbc.gridx = 0;
@@ -237,7 +245,7 @@ public class LoginFrame extends JFrame {
         JButton showLoginButton = new JButton("Quay lại");
         showLoginButton.setFont(new Font("Arial", Font.BOLD, 28));
         showLoginButton.addActionListener(e -> cardLayout.show(mainCardPanel, "LOGIN"));
-        buttonPanel.add(showLoginButton); // Thêm nút Quay lại
+        buttonPanel.add(showLoginButton);
         
         formPanel.add(buttonPanel, gbc);
         
@@ -294,6 +302,13 @@ public class LoginFrame extends JFrame {
 
         // Gọi AuthController để gửi request đăng ký
         authController.register(username, password, fullName, yearOfBirth, gender);
+        cardLayout.show(mainCardPanel, "LOGIN");
+        regUsernameField.setText("");
+        regPasswordField.setText("");
+        regConfirmPasswordField.setText("");
+        regFullNameField.setText("");
+        regYearOfBirthField.setText("");
+        regGenderComboBox.setSelectedIndex(0);
     }
     
     public void showError(String message) {
