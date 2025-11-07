@@ -70,11 +70,13 @@ public class MatchFrame extends JFrame {
         main.add(wordsPanel, BorderLayout.CENTER);
 
         // Bottom: end match button
-        JButton endBtn = new JButton("Kết thúc sớm");
-        endBtn.addActionListener(e -> sendMatchEnd());
-        main.add(endBtn, BorderLayout.SOUTH);
+        JButton endBtn = new JButton("Về sảnh");
+        endBtn.addActionListener(e -> {
+            sendLeaveMatch();
 
-        add(main);
+            this.dispose(); 
+        });
+        main.add(endBtn, BorderLayout.SOUTH);
     }
 
     private JLabel makeInfoLabel(String text) {
@@ -178,12 +180,14 @@ public class MatchFrame extends JFrame {
         for (Map.Entry<String, JsonElement> e : players.entrySet()) {
             JsonObject ps = e.getValue().getAsJsonObject();
             int score = ps.has("score") ? ps.get("score").getAsInt() : 0;
+            String status = ps.has("connectionStatus") ? ps.get("connectionStatus").getAsString() : "CONNECTED";
             try {
                 int uid = Integer.parseInt(e.getKey());
                 if (uid == selfUserId) {
                     scoreLabelSelf.setText("Điểm của bạn: " + score);
                 } else {
-                    scoreLabelOpponent.setText("Điểm đối thủ: " + score);
+                    String statusText = status.equals("DISCONNECTED") ? " (Đã thoát)" : "";
+                    scoreLabelOpponent.setText("Điểm đối thủ: " + score + statusText);
                 }
             } catch (NumberFormatException ignored) {}
         }
@@ -214,10 +218,10 @@ public class MatchFrame extends JFrame {
         socketHandler.sendMessage("MATCH_INPUT", payload);
     }
 
-    private void sendMatchEnd() {
+    private void sendLeaveMatch() {
         JsonObject payload = new JsonObject();
         payload.addProperty("roomId", roomId);
-        socketHandler.sendMessage("MATCH_END", payload);
+        socketHandler.sendMessage("LEAVE_MATCH", payload); 
     }
 }
 

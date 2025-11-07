@@ -9,6 +9,13 @@ public class PlayerState {
     // produce explicit per-player revealed patterns instead.
     private transient java.util.List<WordInstance> personalWords = new java.util.ArrayList<>();
 
+    public enum ConnectionStatus {
+        CONNECTED,
+        DISCONNECTED // Trạng thái khi người chơi thoát về sảnh
+    }
+    
+    private ConnectionStatus connectionStatus = ConnectionStatus.CONNECTED;
+
     public void addScore(int points) {
         score += points;
         lastScoreAt = System.currentTimeMillis();
@@ -25,6 +32,14 @@ public class PlayerState {
 
     public java.util.List<WordInstance> getPersonalWords() { return personalWords; }
     public void setPersonalWords(java.util.List<WordInstance> personalWords) { this.personalWords = personalWords; }
+
+    public ConnectionStatus getConnectionStatus() {
+        return connectionStatus;
+    }
+
+    public void setConnectionStatus(ConnectionStatus connectionStatus) {
+        this.connectionStatus = connectionStatus;
+    }
 }
 
 

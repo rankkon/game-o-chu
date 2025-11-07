@@ -5,11 +5,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import model.MatchRoom;
 import model.User;
 import service.AuthService;
 import service.MatchService;
@@ -108,6 +111,12 @@ public class ClientHandler implements Runnable {
                 case "MATCHMAKE_CANCEL":
                     handleMatchmakeCancel();
                     break;
+                case "LEAVE_MATCH":
+                    handleLeaveMatch(json);
+                    break;
+                case "RECONNECT_MATCH":
+                    handleReconnectMatch(json);
+                    break;
                 default:
                     sendError("Unknown request type: " + type);
                     break;
@@ -189,6 +198,7 @@ public class ClientHandler implements Runnable {
                 send(response);
 
                 broadcastUserOnline(user);
+                checkAndSendReconnectPrompt();
             } else {
                 send(makeResponse("LOGIN_RESPONSE", "error", "Invalid username or password"));
             }
@@ -271,6 +281,51 @@ public class ClientHandler implements Runnable {
         }
         matchService.removePlayerFromMatchmaking(currentUser.getId(), this);
     }
+
+    private void handleLeaveMatch(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        String roomId = json.get("roomId").getAsString();
+        matchService.handleLeaveMatch(roomId, currentUser.getId());
+        
+        // Gửi xác nhận về client để client biết có thể về lobby
+        send(makeResponse("LEAVE_MATCH_SUCCESS", "success"));
+        
+        // KIỂM TRA LẠI: Sau khi rời trận, kiểm tra xem có trận nào khác
+        // đang chờ reconnect không (trường hợp hiếm nhưng có thể xảy ra)
+        checkAndSendReconnectPrompt();
+    }
+
+    private void handleReconnectMatch(JsonObject json) {
+        if (currentUser == null) {
+            sendError("Chưa đăng nhập");
+            return;
+        }
+        String roomId = json.get("roomId").getAsString();
+        MatchRoom room = matchService.handleReconnect(roomId, currentUser.getId());
+
+        if (room != null) {
+            // Gửi toàn bộ dữ liệu trận đấu về cho client
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("action", "reconnect_success"); // Tên message mới
+            payload.put("roomId", room.getRoomId());
+            payload.put("data", room.toDto());
+            
+            // Dùng hàm sendMessage(String, JsonObject) của bạn
+            // Cần convert Map sang JsonObject
+            JsonObject dataJson = JsonParser.parseString(JsonUtil.toJson(payload)).getAsJsonObject();
+            
+            // Gửi message
+            sendMessage(dataJson.get("action").getAsString(), dataJson);
+
+        } else {
+            sendError("Không thể kết nối lại trận đấu.");
+        }
+    }
+
+
 
     // ------------------- Invite handlers -------------------
 
@@ -417,6 +472,11 @@ public class ClientHandler implements Runnable {
 
     private void cleanup() {
         if (currentUser != null) {
+            MatchRoom activeMatch = matchService.findActiveMatchForUser(currentUser.getId());
+            if (activeMatch != null) {
+                matchService.handleLeaveMatch(activeMatch.getRoomId(), currentUser.getId());
+                System.out.println("User " + currentUser.getId() + " hard disconnected, setting status in match " + activeMatch.getRoomId());
+            }
             matchService.removePlayerFromMatchmaking(currentUser.getId(), null);
             userService.removeOnlineUser(currentUser.getId());
             broadcastUserOffline(currentUser);
@@ -452,5 +512,23 @@ public class ClientHandler implements Runnable {
      */
     public void sendMessage(String message) {
         out.println(message);
+    }
+
+    private void checkAndSendReconnectPrompt() {
+        MatchRoom pendingMatch = matchService.findPendingMatchForUser(currentUser.getId());
+        if (pendingMatch != null) {
+            // Lấy thông tin đối thủ
+            int opponentId = (pendingMatch.getCreatorId() == currentUser.getId()) 
+                                ? pendingMatch.getOpponentId() 
+                                : pendingMatch.getCreatorId();
+            User opponent = userService.getUserById(opponentId);
+            String opponentName = (opponent != null) ? opponent.getName() : "Người chơi ẩn";
+
+            // Gửi tin nhắn về client
+            JsonObject prompt = new JsonObject();
+            prompt.addProperty("roomId", pendingMatch.getRoomId());
+            prompt.addProperty("opponentName", opponentName);
+            sendMessage("ACTIVE_MATCH_PENDING", prompt);
+        }
     }
 }

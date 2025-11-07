@@ -172,6 +172,67 @@ public class MatchService {
         } catch (NumberFormatException ignored) {}
     }
 
+    /**
+     * Xử lý khi người chơi chủ động "Thoát về sảnh" (Leave Match)
+     */
+    public void handleLeaveMatch(String roomId, int userId) {
+        MatchRoom room = rooms.get(roomId);
+        if (room == null || !"PLAYING".equals(room.getStatus())) return;
+
+        PlayerState ps = room.getPlayers().get(userId);
+        if (ps != null) {
+            ps.setConnectionStatus(PlayerState.ConnectionStatus.DISCONNECTED);
+            System.out.println("User " + userId + " DISCONNECTED from room " + roomId);
+            // Gửi cập nhật cho đối thủ (để họ thấy "Đã thoát")
+            broadcastMatchUpdate(room);
+        }
+    }
+
+    /**
+     * Xử lý khi người chơi kết nối lại trận đấu
+     */
+    public MatchRoom handleReconnect(String roomId, int userId) {
+        MatchRoom room = rooms.get(roomId);
+        if (room == null || !"PLAYING".equals(room.getStatus())) return null;
+
+        PlayerState ps = room.getPlayers().get(userId);
+        if (ps != null && ps.getConnectionStatus() == PlayerState.ConnectionStatus.DISCONNECTED) {
+            ps.setConnectionStatus(PlayerState.ConnectionStatus.CONNECTED);
+            System.out.println("User " + userId + " RECONNECTED to room " + roomId);
+            // Gửi cập nhật cho cả hai, và gửi full data cho người vừa reconnect
+            broadcastMatchUpdate(room);
+            return room;
+        }
+        return null; // Không tìm thấy trận/trạng thái không hợp lệ
+    }
+
+    /**
+     * Tìm một trận đấu "PLAYING" mà user này bị "DISCONNECTED"
+     */
+    public MatchRoom findPendingMatchForUser(int userId) {
+        for (MatchRoom room : rooms.values()) {
+            if ("PLAYING".equals(room.getStatus()) && room.getPlayers().containsKey(userId)) {
+                PlayerState ps = room.getPlayers().get(userId);
+                if (ps.getConnectionStatus() == PlayerState.ConnectionStatus.DISCONNECTED) {
+                    return room;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Tìm bất kỳ trận đấu "PLAYING" nào của user (dùng cho cleanup)
+     */
+    public MatchRoom findActiveMatchForUser(int userId) {
+        for (MatchRoom room : rooms.values()) {
+            if ("PLAYING".equals(room.getStatus()) && room.getPlayers().containsKey(userId)) {
+                return room;
+            }
+        }
+        return null;
+    }
+
         /**
      * Thêm người chơi vào hàng chờ ghép đấu.
      * Cần 'synchronized' để đảm bảo 2 thread không cùng lúc poll() và add().
