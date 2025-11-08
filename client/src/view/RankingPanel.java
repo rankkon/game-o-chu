@@ -125,17 +125,6 @@ public class RankingPanel extends JPanel {
         infoPanel.setBackground(Theme.COLOR_BACKGROUND);
         infoPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
         
-        JLabel infoLabel1 = new JLabel("* Bảng xếp hạng được cập nhật theo thời gian thực", SwingConstants.RIGHT);
-        JLabel infoLabel2 = new JLabel("* Tiêu chí: Tổng điểm → Số trận thắng → Thời gian TB còn lại", SwingConstants.RIGHT);
-        
-        infoLabel1.setFont(Theme.FONT_BUTTON_SMALL);
-        infoLabel1.setForeground(Theme.COLOR_TEXT_DARK.brighter());
-        infoLabel2.setFont(Theme.FONT_BUTTON_SMALL);
-        infoLabel2.setForeground(Theme.COLOR_TEXT_DARK.brighter());
-
-        infoPanel.add(infoLabel1);
-        infoPanel.add(infoLabel2);
-        
         bottomPanel.add(infoPanel, BorderLayout.EAST);
         add(bottomPanel, BorderLayout.SOUTH);
     }

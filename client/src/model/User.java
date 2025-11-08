@@ -11,18 +11,16 @@ public class User {
     private double score = 1000;
     private int matchCount = 0;
     private int winCount = 0;
-    private int drawCount = 0;
     private int loseCount = 0;
-    private int currentStreak = 0;
-    private int rank = -1;
     private boolean blocked = false;
+    private String status = "IDLE";
 
     public User() {
     }
 
     public User(int id, String username, String name, String avatar, String gender, 
                 int yearOfBirth, double score, int matchCount, int winCount, 
-                int drawCount, int loseCount, int currentStreak, int rank, boolean blocked) {
+                int loseCount, boolean blocked) {
         this.id = id;
         this.username = username;
         this.name = name;
@@ -32,10 +30,7 @@ public class User {
         this.score = score;
         this.matchCount = matchCount;
         this.winCount = winCount;
-        this.drawCount = drawCount;
         this.loseCount = loseCount;
-        this.currentStreak = currentStreak;
-        this.rank = rank;
         this.blocked = blocked;
     }
 
@@ -67,20 +62,14 @@ public class User {
     public int getWinCount() { return winCount; }
     public void setWinCount(int winCount) { this.winCount = winCount; }
     
-    public int getDrawCount() { return drawCount; }
-    public void setDrawCount(int drawCount) { this.drawCount = drawCount; }
-    
     public int getLoseCount() { return loseCount; }
     public void setLoseCount(int loseCount) { this.loseCount = loseCount; }
     
-    public int getCurrentStreak() { return currentStreak; }
-    public void setCurrentStreak(int currentStreak) { this.currentStreak = currentStreak; }
-    
-    public int getRank() { return rank; }
-    public void setRank(int rank) { this.rank = rank; }
-    
     public boolean isBlocked() { return blocked; }
     public void setBlocked(boolean blocked) { this.blocked = blocked; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     
     // Tính toán thêm
     public float getWinRate() {

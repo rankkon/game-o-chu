@@ -75,6 +75,9 @@ public class LobbyController implements SocketHandler.SocketListener {
     }
     
     public void logout() {
+        // Đảm bảo đóng cửa sổ lobby và ngừng nhận sự kiện trước khi logout
+        closeLobby();
+        socketHandler.removeListener(this);
         authController.logout();
     }
 
@@ -358,8 +361,7 @@ public class LobbyController implements SocketHandler.SocketListener {
 
         if (lobbyFrame != null) {
             lobbyFrame.showInfo("Kết thúc trận! Người thắng: " + winnerName);
-            // Cập nhật bảng xếp hạng và danh sách người chơi sau khi kết thúc trận
-            requestRankingUpdate();
+            // Chỉ cần yêu cầu lại danh sách online; bảng xếp hạng đã được server broadcast
             requestOnlineUsers();
         }
         if (gameFrame != null) {
@@ -453,7 +455,7 @@ public class LobbyController implements SocketHandler.SocketListener {
         socketHandler.sendMessage("GET_RANKINGS", null);
     }
 
-    private void handleMatchHistory(JsonObject data) {
+    public void handleMatchHistory(JsonObject data) {
         if (lobbyFrame != null && data != null) {
             List<model.Match> matches = new ArrayList<>();
             
@@ -464,48 +466,65 @@ public class LobbyController implements SocketHandler.SocketListener {
                     
                     for (JsonElement element : matchesArray) {
                         JsonObject matchObj = element.getAsJsonObject();
-                        try {
-                            // Get required fields with null checks
-                            int matchId = matchObj.has("matchId") ? matchObj.get("matchId").getAsInt() : 0;
-                            String player1Name = matchObj.has("player1Name") ? matchObj.get("player1Name").getAsString() : "Unknown";
-                            String player2Name = matchObj.has("player2Name") ? matchObj.get("player2Name").getAsString() : "Unknown";
-                            int player1Score = matchObj.has("player1Score") ? matchObj.get("player1Score").getAsInt() : 0;
-                            int player2Score = matchObj.has("player2Score") ? matchObj.get("player2Score").getAsInt() : 0;
-                            
-                            // Get startTime with fallback
-                            long startTimeMs = matchObj.has("startTime") ? matchObj.get("startTime").getAsLong() : 
-                                             matchObj.has("matchDate") ? matchObj.get("matchDate").getAsLong() : 
-                                             System.currentTimeMillis();
-                            Date matchDate = new Date(startTimeMs);
-                            
-                            // Determine result based on winner
-                            String result;
-                            if (matchObj.has("winnerName") && !matchObj.get("winnerName").isJsonNull()) {
-                                String winnerName = matchObj.get("winnerName").getAsString();
-                                result = winnerName.equals(player1Name) ? "WIN" : "LOSE";
-                            } else {
-                                // If scores are equal, it's a draw
-                                result = (player1Score == player2Score) ? "DRAW" : 
-                                        (player1Score > player2Score) ? "WIN" : "LOSE";
-                            }
-                            
-                            String category = matchObj.has("category") ? matchObj.get("category").getAsString() : "Không xác định";
-                            String chatLog = matchObj.has("chatLog") ? matchObj.get("chatLog").getAsString() : "";
-                            String opponentName = matchObj.has("opponentName") ? matchObj.get("opponentName").getAsString() : player2Name;
+                        try {                        // Build match entry relative to current user
+                        int matchId = matchObj.has("matchId") ? matchObj.get("matchId").getAsInt() : 0;
+                        int player1Id = matchObj.has("player1Id") ? matchObj.get("player1Id").getAsInt() : -1;
+                        int player2Id = matchObj.has("player2Id") ? matchObj.get("player2Id").getAsInt() : -1;
+                        String player1Name = matchObj.has("player1Name") ? matchObj.get("player1Name").getAsString() : "Unknown";
+                        String player2Name = matchObj.has("player2Name") ? matchObj.get("player2Name").getAsString() : "Unknown";
+                        int player1Score = matchObj.has("player1Score") ? matchObj.get("player1Score").getAsInt() : 0;
+                        int player2Score = matchObj.has("player2Score") ? matchObj.get("player2Score").getAsInt() : 0;
 
-                            model.Match match = new model.Match(
-                                matchId,
-                                category,
-                                player1Name,
-                                player2Name,
-                                player1Score,
-                                player2Score,
-                                matchDate,
-                                result,
-                                chatLog,
-                                opponentName
-                            );
-                            matches.add(match);
+                        long startTimeMs = matchObj.has("startTime") ? matchObj.get("startTime").getAsLong()
+                                : matchObj.has("matchDate") ? matchObj.get("matchDate").getAsLong()
+                                : System.currentTimeMillis();
+                        Date matchDate = new Date(startTimeMs);
+
+                        int currentPlayerId = currentUser != null ? currentUser.getId() : player1Id;
+                        boolean isPlayerOne = currentPlayerId == player1Id;
+                        String selfName = currentUser != null ? currentUser.getName()
+                                : (isPlayerOne ? player1Name : player2Name);
+                        String opponentName = isPlayerOne ? player2Name : player1Name;
+                        int opponentId = isPlayerOne ? player2Id : player1Id;
+                        int myScore = isPlayerOne ? player1Score : player2Score;
+                        int opponentScore = isPlayerOne ? player2Score : player1Score;
+
+                        int winnerId = (matchObj.has("winnerId") && !matchObj.get("winnerId").isJsonNull())
+                                ? matchObj.get("winnerId").getAsInt()
+                                : -1;
+
+                        String result = (matchObj.has("result") && !matchObj.get("result").isJsonNull())
+                                ? matchObj.get("result").getAsString().toUpperCase()
+                                : null;
+                        if (result == null || result.isEmpty()) {
+                            if (winnerId > 0) {
+                                result = winnerId == currentPlayerId ? "WIN"
+                                        : (winnerId == opponentId ? "LOSE" : "DRAW");
+                            } else if (myScore == opponentScore) {
+                                result = "DRAW";
+                            } else {
+                                result = myScore > opponentScore ? "WIN" : "LOSE";
+                            }
+                        }
+
+                        String category = matchObj.has("category") ? matchObj.get("category").getAsString() : "Chua x�c d?nh";
+                        String chatLog = (matchObj.has("chatLog") && !matchObj.get("chatLog").isJsonNull())
+                                ? matchObj.get("chatLog").getAsString()
+                                : "Kh�ng c�";
+
+                        model.Match match = new model.Match(
+                            matchId,
+                            category,
+                            selfName,
+                            opponentName,
+                            myScore,
+                            opponentScore,
+                            matchDate,
+                            result,
+                            chatLog,
+                            opponentName
+                        );
+                        matches.add(match);
                             
                         } catch (Exception e) {
                             // System.err.println("Error parsing match: " + e.getMessage() + 
@@ -563,3 +582,6 @@ public class LobbyController implements SocketHandler.SocketListener {
         }
     }
 }
+
+
+

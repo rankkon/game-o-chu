@@ -308,6 +308,7 @@ public class MatchService {
         String json = JsonUtil.toJson(payload);
         userService.sendToUser(room.getCreatorId(), json);
         userService.sendToUser(room.getOpponentId(), json);
+
     }
 
     /**
@@ -326,10 +327,7 @@ public class MatchService {
             }
         } catch (Exception ignored) {}
 
-        // Lưu vào database
-        matchDAO.appendChatLog(room.getMatchId(), senderName, message, new java.sql.Timestamp(System.currentTimeMillis()));
-
-        // Gửi tin nhắn đến cả 2 người chơi
+        // Gửi tin nhắn đến cả 2 người chơi (không lưu DB)
         JsonObject chatMessage = new JsonObject();
         chatMessage.addProperty("type", "CHAT_MESSAGE");
         chatMessage.addProperty("roomId", roomId);

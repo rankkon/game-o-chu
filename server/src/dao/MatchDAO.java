@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
 import util.DBConnection;
@@ -51,53 +52,6 @@ public class MatchDAO {
         }
     }
 
-    public void appendChatLog(int matchId, String senderName, String message, Timestamp time) {
-        String chatEntry = String.format("[%s] %s: %s\n", time.toString(), senderName, message);
-        
-        try (Connection conn = DBConnection.getInstance().getConnection()) {
-            // Đọc chat_log hiện tại
-            String currentLog = "";
-            String selectSql = "SELECT chat_log FROM game_match WHERE match_id=?";
-            try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
-                ps.setInt(1, matchId);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    String existing = rs.getString("chat_log");
-                    if (existing != null) {
-                        currentLog = existing;
-                    }
-                }
-            }
-
-            // Thêm tin nhắn mới vào cuối
-            String newLog = currentLog + chatEntry;
-            
-            // Cập nhật chat_log
-            String updateSql = "UPDATE game_match SET chat_log=? WHERE match_id=?";
-            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                ps.setString(1, newLog);
-                ps.setInt(2, matchId);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public String getChatLog(int matchId) {
-        try (Connection conn = DBConnection.getInstance().getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT chat_log FROM game_match WHERE match_id=?")) {
-            ps.setInt(1, matchId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getString("chat_log");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
     public List<JsonObject> getMatchHistory(int userId) {
         List<JsonObject> matches = new ArrayList<>();
         String sql = "SELECT m.*, " +
@@ -127,6 +81,8 @@ public class MatchDAO {
                 int player2Score = rs.getInt("player2_score");
                 
                 match.addProperty("matchId", matchId);
+                match.addProperty("player1Id", player1Id);
+                match.addProperty("player2Id", player2Id);
                 match.addProperty("player1Name", player1Name);
                 match.addProperty("player2Name", player2Name);
                 match.addProperty("player1Score", player1Score);
@@ -135,38 +91,13 @@ public class MatchDAO {
                 match.addProperty("startTime", rs.getTimestamp("start_time").getTime());
                 match.addProperty("category", rs.getString("category_name"));
                 match.addProperty("chatLog", rs.getString("chat_log"));
-
-                // Xác định đối thủ
-                String opponentName;
-                if (userId == player1Id) {
-                    opponentName = player2Name;
-                } else {
-                    opponentName = player1Name;
-                }
-                match.addProperty("opponentName", opponentName);
                 
-                // Xác định kết quả trận đấu dựa vào winner_id
                 Integer winnerId = rs.getInt("winner_id");
-                if (!rs.wasNull()) {
-                    // Nếu người chơi hiện tại là người thắng
-                    if ((userId == player1Id && winnerId == player1Id) ||
-                        (userId == player2Id && winnerId == player2Id)) {
-                        match.addProperty("result", "WIN");
-                    } else {
-                        match.addProperty("result", "LOSE");
-                    }
+                if (rs.wasNull()) {
+                    match.add("winnerId", com.google.gson.JsonNull.INSTANCE);
                 } else {
-                    // Nếu không có winner_id, xác định dựa vào điểm số
-                    if (player1Score == player2Score) {
-                        match.addProperty("result", "DRAW");
-                    } else if ((userId == player1Id && player1Score > player2Score) ||
-                             (userId == player2Id && player2Score > player1Score)) {
-                        match.addProperty("result", "WIN");
-                    } else {
-                        match.addProperty("result", "LOSE");
-                    }
+                    match.addProperty("winnerId", winnerId);
                 }
-                
                 matches.add(match);
             }
         } catch (SQLException e) {

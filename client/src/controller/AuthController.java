@@ -1,6 +1,7 @@
 package controller;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import com.google.gson.JsonObject;
 
@@ -21,8 +22,13 @@ public class AuthController implements SocketHandler.SocketListener {
     }
     
     public void showLogin() {
-        loginFrame = new LoginFrame(this);
-        loginFrame.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            if (loginFrame != null) {
+                loginFrame.dispose();
+            }
+            loginFrame = new LoginFrame(this);
+            loginFrame.setVisible(true);
+        });
     }
     
     public void login(String username, String password) {
@@ -45,12 +51,6 @@ public class AuthController implements SocketHandler.SocketListener {
     public void logout() {
         socketHandler.sendMessage("LOGOUT", null);
         currentUser = null;
-        
-        // Close lobby if open and show login screen
-        // if (lobbyController != null) {
-        //     lobbyController.closeLobby();
-        //     lobbyController = null;
-        // }
         showLogin();
     }
     
@@ -60,76 +60,73 @@ public class AuthController implements SocketHandler.SocketListener {
             handleLoginResponse(data);
         } else if ("LOGOUT_RESPONSE".equals(type)) {
             handleLogoutResponse(data);
-        }
-        else if ("REGISTER_RESPONSE".equals(type)) {
+        } else if ("REGISTER_RESPONSE".equals(type)) {
             handleRegisterResponse(data);
         }
     }
     
     private void handleRegisterResponse(JsonObject data) {
-        String status = data.get("status").getAsString();
-        String message = data.get("message").getAsString();
-        
-        if ("success".equals(status)) {
-            // Hiển thị thông báo thành công
-            JOptionPane.showMessageDialog(loginFrame, 
-                    message, 
-                    "Đăng ký thành công", 
-                    JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            // Hiển thị lỗi
-            loginFrame.showError(message);
-        }
+        final String status = data.get("status").getAsString();
+        final String message = data.get("message").getAsString();
+        SwingUtilities.invokeLater(() -> {
+            if ("success".equals(status)) {
+                JOptionPane.showMessageDialog(loginFrame,
+                        message,
+                        "Dang ky thanh cong",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (loginFrame != null) {
+                loginFrame.showError(message);
+            }
+        });
     }
 
     private void handleLoginResponse(JsonObject data) {
         String status = data.get("status").getAsString();
-        
         if ("success".equals(status)) {
-            // Parse user information using utility class
             JsonObject userData = data.getAsJsonObject("user");
-            this.currentUser = UserParser.parseFromJson(userData);
-
+            User parsedUser = UserParser.parseFromJson(userData);
             String reconnectMatchId = null;
             if (data.has("reconnectMatchId") && !data.get("reconnectMatchId").isJsonNull()) {
                 reconnectMatchId = data.get("reconnectMatchId").getAsString();
                 System.out.println("[AuthController] Login success, found reconnectMatchId: " + reconnectMatchId);
             }
-            
-            // Close login frame
-            loginFrame.dispose();
-            loginFrame = null;
-            
-            // Open lobby
-            uiController.openLobby(currentUser, socketHandler, reconnectMatchId);
+            final String reconnectId = reconnectMatchId;
+            final User userFinal = parsedUser;
+            SwingUtilities.invokeLater(() -> {
+                this.currentUser = userFinal;
+                if (loginFrame != null) {
+                    loginFrame.dispose();
+                    loginFrame = null;
+                }
+                uiController.openLobby(userFinal, socketHandler, reconnectId);
+            });
         } else {
-            // Show error message
             String errorMessage = data.get("message").getAsString();
-            loginFrame.showError(errorMessage);
+            SwingUtilities.invokeLater(() -> {
+                if (loginFrame != null) {
+                    loginFrame.showError(errorMessage);
+                }
+            });
         }
     }
     
     private void handleLogoutResponse(JsonObject data) {
-        // User already logged out in the logout() method
-        // We could handle any special server response here if needed
+        // No-op: logout already processed locally.
     }
     
     @Override
     public void onDisconnect(String reason) {
-        // Handle disconnect, e.g. show reconnect dialog
-        // if (lobbyController != null) {
-        //     lobbyController.closeLobby();
-        //     lobbyController = null;
-        // }
-        
-        if (loginFrame != null) {
-            loginFrame.showError("Mất kết nối đến máy chủ: " + reason);
-        } else {
-            showLogin();
-            loginFrame.showError("Mất kết nối đến máy chủ: " + reason);
-        }
-        
-        currentUser = null;
+        SwingUtilities.invokeLater(() -> {
+            currentUser = null;
+            if (loginFrame != null) {
+                loginFrame.showError("Mat ket noi den may chu: " + reason);
+            } else {
+                showLogin();
+                if (loginFrame != null) {
+                    loginFrame.showError("Mat ket noi den may chu: " + reason);
+                }
+            }
+        });
     }
     
     public User getCurrentUser() {

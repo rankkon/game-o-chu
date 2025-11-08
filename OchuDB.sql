@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS game_match (
 -- ===============================
 CREATE TABLE IF NOT EXISTS category (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
-    category_code VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,  -- Mã không dấu (VD: HOAQUA)
+    category_code VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,  -- Mã không dấu (VD: HOAQUA)
     category_name VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,         -- Tên có dấu (VD: Hoa quả)
     description VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB
@@ -86,7 +86,7 @@ VALUES
 -- ===============================
 CREATE TABLE IF NOT EXISTS dictionary (
     word_id INT AUTO_INCREMENT PRIMARY KEY,
-    word_code VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,  -- dạng không dấu viết hoa (VD: TAO)
+    word_code VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,  -- dạng không dấu viết hoa (VD: TAO)
     word_text VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,         -- dạng có dấu (VD: táo)
     category_id INT NOT NULL,
     FOREIGN KEY (category_id) REFERENCES category(category_id)

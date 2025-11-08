@@ -27,15 +27,6 @@ public class RankingController {
         client.sendMessage("RANKING_UPDATE", response);
     }
 
-    public void broadcastRankingUpdate(List<ClientHandler> clients) {
-        List<Ranking> rankings = rankingService.getTopPlayers();
-        JsonObject response = createRankingResponse(rankings);
-        
-        for (ClientHandler client : clients) {
-            client.sendMessage("RANKING_UPDATE", response);
-        }
-    }
-
     private JsonObject createRankingResponse(List<Ranking> rankings) {
         JsonObject response = new JsonObject();
         JsonArray rankingsArray = new JsonArray();

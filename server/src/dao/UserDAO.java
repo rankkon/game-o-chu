@@ -117,7 +117,7 @@ public class UserDAO {
             }
             
             // Insert new user
-            String insertSql = "INSERT INTO users (Username, Password, Name, Avatar, Gender, YearOfBirth, Score, MatchCount, WinCount, DrawCount, LoseCount, CurrentStreak, Rank, Blocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertSql = "INSERT INTO users (Username, Password, Name, Avatar, Gender, YearOfBirth, Score, MatchCount, WinCount, LoseCount, Blocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
                 insertPs.setString(1, username);
                 insertPs.setString(2, password);
@@ -129,10 +129,7 @@ public class UserDAO {
                 insertPs.setInt(8, 0);
                 insertPs.setInt(9, 0);
                 insertPs.setInt(10, 0);
-                insertPs.setInt(11, 0);
-                insertPs.setInt(12, 0);
-                insertPs.setInt(13, -1);
-                insertPs.setBoolean(14, false);
+                insertPs.setBoolean(11, false);
                 
                 return insertPs.executeUpdate() > 0;
             }
@@ -154,10 +151,7 @@ public class UserDAO {
         user.setScore(rs.getDouble("Score"));
         user.setMatchCount(rs.getInt("MatchCount"));
         user.setWinCount(rs.getInt("WinCount"));
-        user.setDrawCount(rs.getInt("DrawCount"));
         user.setLoseCount(rs.getInt("LoseCount"));
-        user.setCurrentStreak(rs.getInt("CurrentStreak"));
-        user.setRank(rs.getInt("Rank"));
         user.setBlocked(rs.getBoolean("Blocked"));
         return user;
     }

@@ -13,18 +13,15 @@ public class User implements Serializable {
     private double score;
     private int matchCount;
     private int winCount;
-    private int drawCount;
     private int loseCount;
-    private int currentStreak;
-    private int rank;
     private boolean blocked;
+    private String status = "IDLE";
 
     public User() {
     }
 
     public User(int id, String username, String avatar, String name, String gender, int yearOfBirth, 
-                double score, int matchCount, int winCount, int drawCount, int loseCount, 
-                int currentStreak, int rank, boolean blocked) {
+                double score, int matchCount, int winCount, int loseCount, boolean blocked) {
         this.id = id;
         this.username = username;
         this.avatar = avatar;
@@ -34,10 +31,7 @@ public class User implements Serializable {
         this.score = score;
         this.matchCount = matchCount;
         this.winCount = winCount;
-        this.drawCount = drawCount;
         this.loseCount = loseCount;
-        this.currentStreak = currentStreak;
-        this.rank = rank;
         this.blocked = blocked;
     }
 
@@ -72,20 +66,14 @@ public class User implements Serializable {
     public int getWinCount() { return winCount; }
     public void setWinCount(int winCount) { this.winCount = winCount; }
     
-    public int getDrawCount() { return drawCount; }
-    public void setDrawCount(int drawCount) { this.drawCount = drawCount; }
-    
     public int getLoseCount() { return loseCount; }
     public void setLoseCount(int loseCount) { this.loseCount = loseCount; }
     
-    public int getCurrentStreak() { return currentStreak; }
-    public void setCurrentStreak(int currentStreak) { this.currentStreak = currentStreak; }
-    
-    public int getRank() { return rank; }
-    public void setRank(int rank) { this.rank = rank; }
-    
     public boolean isBlocked() { return blocked; }
     public void setBlocked(boolean blocked) { this.blocked = blocked; }
+    
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     
     @Override
     public String toString() {

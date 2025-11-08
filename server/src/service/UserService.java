@@ -45,16 +45,29 @@ public class UserService {
 
     public void setUserActiveMatch(int userId, String roomId) {
         userActiveMatch.put(userId, roomId);
+        updateOnlineUserStatus(userId, "PLAYING");
     }
     public void clearUserActiveMatch(int userId) {
         userActiveMatch.remove(userId);
+        updateOnlineUserStatus(userId, "IDLE");
     }
     public String getActiveMatchForUser(int userId) {
         return userActiveMatch.get(userId);
     }
+    private void updateOnlineUserStatus(int userId, String status) {
+        User user = onlineUsers.get(userId);
+        if (user != null) {
+            user.setStatus(status);
+        }
+    }
 
     // ------------------ Online user management ------------------
     public boolean addOnlineUser(User user) {
+        if (userActiveMatch.containsKey(user.getId())) {
+            user.setStatus("PLAYING");
+        } else {
+            user.setStatus("IDLE");
+        }
         return onlineUsers.putIfAbsent(user.getId(), user) == null;
     }
 

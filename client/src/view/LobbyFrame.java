@@ -23,6 +23,7 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import controller.LobbyController;
@@ -56,6 +57,11 @@ public class LobbyFrame extends JFrame {
         setSize(1280, 720);
         setMinimumSize(new Dimension(1280, 720));
         setLocationRelativeTo(null);
+
+        statusLabel = new JLabel("Đã kết nối. Chào mừng " + currentUser.getName() + "!");
+        statusLabel.setFont(Theme.FONT_LABEL);
+        statusLabel.setForeground(Theme.COLOR_WHITE);
+        statusLabel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
         JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
         mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
@@ -103,21 +109,10 @@ public class LobbyFrame extends JFrame {
 
         mainPanel.add(centerCardPanel, BorderLayout.CENTER);
 
-        // Status bar
-        statusLabel = new JLabel("Đã kết nối. Chào mừng " + currentUser.getName() + "!");
-        // Áp dụng Theme
-        statusLabel.setFont(Theme.FONT_INPUT); 
-        statusLabel.setForeground(Theme.COLOR_TEXT_DARK);
-        statusLabel.setBorder(new EmptyBorder(5, 10, 5, 10));
-        statusLabel.setOpaque(true);
-        statusLabel.setBackground(Theme.COLOR_BACKGROUND); 
-        mainPanel.add(statusLabel, BorderLayout.SOUTH);
-
         add(mainPanel);
         
         // Request initial data
         controller.requestOnlineUsers();
-        controller.requestRankingUpdate();
     }
 
     private JPanel createTopPanel() {
@@ -125,26 +120,11 @@ public class LobbyFrame extends JFrame {
         panel.setBackground(Theme.COLOR_WHITE);
         panel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-        JPanel userInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 30, 10));
-        // Áp dụng Theme
-        userInfoPanel.setBackground(Theme.COLOR_WHITE); 
-        
-        JLabel nameLabel = new JLabel("Tên: " + currentUser.getName());
-        nameLabel.setFont(Theme.FONT_INPUT);
-        nameLabel.setForeground(Theme.COLOR_TEXT_DARK);
-        
-        JLabel scoreLabel = new JLabel("Điểm: " + currentUser.getScore());
-        scoreLabel.setFont(Theme.FONT_INPUT);
-        scoreLabel.setForeground(Theme.COLOR_TEXT_DARK);
-        
-        JLabel rankLabel = new JLabel("Xếp hạng: " + (currentUser.getRank() == -1 ? "Chưa xếp hạng" : currentUser.getRank()));
-        rankLabel.setFont(Theme.FONT_INPUT);
-        rankLabel.setForeground(Theme.COLOR_TEXT_DARK);
-
-        userInfoPanel.add(nameLabel);
-        userInfoPanel.add(scoreLabel);
-        userInfoPanel.add(rankLabel);
-        panel.add(userInfoPanel, BorderLayout.CENTER);
+        JPanel welcomePanel = new Theme.RoundedPanel(new BorderLayout());
+        welcomePanel.setBackground(Theme.COLOR_ACCENT);
+        statusLabel.setOpaque(false);
+        welcomePanel.add(statusLabel, BorderLayout.CENTER);
+        panel.add(welcomePanel, BorderLayout.CENTER);
 
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 5));
         controlPanel.setBackground(Theme.COLOR_WHITE); 
@@ -170,7 +150,7 @@ public class LobbyFrame extends JFrame {
         JPanel panel = new Theme.RoundedPanel(new BorderLayout());
         panel.setBackground(Theme.COLOR_WHITE);
         
-        JLabel titleLabel = new JLabel("Tùy chọn trận đấu", JLabel.CENTER);
+        JLabel titleLabel = new JLabel("Tùy chọn chức năng", JLabel.CENTER);
         titleLabel.setFont(Theme.FONT_LABEL);
         titleLabel.setForeground(Theme.COLOR_PRIMARY);
         titleLabel.setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -328,6 +308,10 @@ public class LobbyFrame extends JFrame {
         inviteButton.addActionListener(e -> {
             User selectedUser = onlineUsersList.getSelectedValue();
             if (selectedUser != null && selectedUser.getId() != currentUser.getId()) {
+                if ("PLAYING".equalsIgnoreCase(selectedUser.getStatus())) {
+                    showError("Người chơi đang bận trong một trận khác.");
+                    return;
+                }
                 controller.sendInvite(selectedUser.getId());
                 showInfo("Đã gửi lời mời đấu tới " + selectedUser.getName());
             } else if (selectedUser != null && selectedUser.getId() == currentUser.getId()) {
@@ -441,6 +425,10 @@ public class LobbyFrame extends JFrame {
     }
 
     public void updateRankings(List<model.Ranking> rankings) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> updateRankings(rankings));
+            return;
+        }
         if (rankings != null && !rankings.isEmpty()) {
             rankingPanel.updateRankings(rankings);
             rankingPanel.highlightCurrentPlayer(currentUser.getUsername());
@@ -454,26 +442,32 @@ public class LobbyFrame extends JFrame {
         }
     }
 
-    // Tùy chỉnh Cell Renderer để áp dụng Theme
+    // Custom renderer for online list to show player status
     private class UserListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
-            
-            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
+            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             label.setFont(Theme.FONT_INPUT);
             label.setBorder(new EmptyBorder(5, 15, 5, 15));
 
             if (value instanceof User) {
                 User user = (User) value;
-                label.setText(user.getName() + " (" + user.getScore() + ")");
-                
+                String status = user.getStatus() != null ? user.getStatus() : "IDLE";
+                boolean isPlaying = "PLAYING".equalsIgnoreCase(status);
+                String statusText = isPlaying ? "Dang choi" : "San sang";
+                label.setText(String.format("%s (%.0f) - %s", user.getName(), user.getScore(), statusText));
+
+                if (!isSelected) {
+                    label.setForeground(isPlaying ? new java.awt.Color(200, 80, 80) : Theme.COLOR_TEXT_DARK);
+                }
+
                 if (user.getId() == currentUser.getId()) {
                     label.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD));
-                    label.setText(label.getText() + " (Bạn)");
+                    label.setText(label.getText() + " (Ban)");
                 }
-            }          
+            }
             return label;
         }
     }

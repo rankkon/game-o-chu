@@ -50,7 +50,8 @@ public class RankingDAO {
                 ), 2) as avg_time_remaining
             FROM users u
             WHERE u.Blocked = 0
-              AND u.MatchCount > 0
+              AND u.MatchCount >= 0
+              AND u.Name != 'Administrator'
             ORDER BY 
                 u.Score DESC,
                 u.WinCount DESC,

@@ -44,20 +44,14 @@ public class UserParser {
         if (userObject.has("winCount")) {
             user.setWinCount(userObject.get("winCount").getAsInt());
         }
-        if (userObject.has("drawCount")) {
-            user.setDrawCount(userObject.get("drawCount").getAsInt());
-        }
         if (userObject.has("loseCount")) {
             user.setLoseCount(userObject.get("loseCount").getAsInt());
         }
-        if (userObject.has("currentStreak")) {
-            user.setCurrentStreak(userObject.get("currentStreak").getAsInt());
-        }
-        if (userObject.has("rank")) {
-            user.setRank(userObject.get("rank").getAsInt());
-        }
         if (userObject.has("blocked")) {
             user.setBlocked(userObject.get("blocked").getAsBoolean());
+        }
+        if (userObject.has("status")) {
+            user.setStatus(userObject.get("status").getAsString());
         }
         
         return user;
