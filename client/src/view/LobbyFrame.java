@@ -436,7 +436,7 @@ public class LobbyFrame extends JFrame {
     }
 
     public void showProfile(User user) {
-        profilePanel.updateProfile(user);
+        profilePanel.updateProfile(user, currentUser.getId());
         cardLayout.show(centerCardPanel, "PROFILE");
     }
 

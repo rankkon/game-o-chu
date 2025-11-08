@@ -142,38 +142,37 @@ public class ProfilePanel extends JPanel {
         createAvatarMenu();
     }
     
-    public void updateProfile(User user) {
-        this.currentUser = user;
-        loadAvatar(user.getAvatar());
+    public void updateProfile(User userToShow, int currentLoggedInUserId) {
+        // Lưu người dùng đang xem
+        this.currentUser = userToShow; 
+        loadAvatar(userToShow.getAvatar());
 
         // Cập nhật thông tin trên Top Panel
-        lblUsernameTop.setText(user.getUsername()); 
-        lblNameTop.setText(user.getName()); 
+        lblUsernameTop.setText(userToShow.getUsername()); 
+        lblNameTop.setText(userToShow.getName()); 
 
         // Cập nhật thông tin chi tiết
-        lblNameValue.setText(user.getName());
-        lblGenderValue.setText(user.getGender());
-        lblYearOfBirthValue.setText(String.valueOf(user.getYearOfBirth()));
-        lblScoreValue.setText(String.format("%,.0f", user.getScore()));
+        lblNameValue.setText(userToShow.getName());
+        lblGenderValue.setText(userToShow.getGender());
+        lblYearOfBirthValue.setText(String.valueOf(userToShow.getYearOfBirth()));
+        lblScoreValue.setText(String.format("%,.0f", userToShow.getScore()));
         
-        lblWinCountValue.setText(String.format("%,d", user.getWinCount()));
-        lblLoseCountValue.setText(String.format("%,d", user.getLoseCount()));
-        lblMatchCountValue.setText(String.format("%,d", user.getMatchCount()));
+        lblWinCountValue.setText(String.format("%,d", userToShow.getWinCount()));
+        lblLoseCountValue.setText(String.format("%,d", userToShow.getLoseCount()));
+        lblMatchCountValue.setText(String.format("%,d", userToShow.getMatchCount()));
         
-        if (user.getMatchCount() > 0) {
-            double winRate = (user.getWinCount() * 100.0) / user.getMatchCount();
+        if (userToShow.getMatchCount() > 0) {
+            double winRate = (userToShow.getWinCount() * 100.0) / userToShow.getMatchCount();
             lblWinRateValue.setText(String.format("%.1f%%", winRate));
         } else {
             lblWinRateValue.setText("0.0%");
         }
-        
-        // Ẩn/hiện nút "Đổi Avatar"
-        // (Giả sử bạn có một biến `viewingUserID` để so sánh)
-        // if (currentUser.getId() == viewingUserID) {
-        //     changeAvatarButton.setVisible(true);
-        // } else {
-        //     changeAvatarButton.setVisible(false);
-        // }
+
+        if (userToShow.getId() == currentLoggedInUserId) {
+            changeAvatarButton.setVisible(true);
+        } else {
+            changeAvatarButton.setVisible(false);
+        }
         
         revalidate();
         repaint();
