@@ -2,19 +2,16 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
+import java.awt.GridBagConstraints; // Import lớp Theme
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
+import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import controller.AuthController;
@@ -28,16 +25,18 @@ public class LoginFrame extends JFrame {
     private final JPanel mainCardPanel;
 
     // Các trường cho panel Login
-    private JTextField loginUsernameField;
-    private JPasswordField loginPasswordField;
+    // Thay đổi thành RoundedTextField/PasswordField
+    private Theme.RoundedTextField loginUsernameField;
+    private Theme.RoundedPasswordField loginPasswordField;
 
     // Các trường cho panel Register
-    private JTextField regUsernameField;
-    private JPasswordField regPasswordField;
-    private JPasswordField regConfirmPasswordField;
-    private JTextField regFullNameField;
-    private JTextField regYearOfBirthField;
-    private JComboBox<String> regGenderComboBox;
+    // Thay đổi thành RoundedTextField/PasswordField/ComboBox
+    private Theme.RoundedTextField regUsernameField;
+    private Theme.RoundedPasswordField regPasswordField;
+    private Theme.RoundedPasswordField regConfirmPasswordField;
+    private Theme.RoundedTextField regFullNameField;
+    private Theme.RoundedTextField regYearOfBirthField;
+    private Theme.RoundedComboBox<String> regGenderComboBox;
     
     public LoginFrame(AuthController authController) {
         this.authController = authController;
@@ -49,16 +48,26 @@ public class LoginFrame extends JFrame {
         
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(new EmptyBorder(50, 100, 50, 100));
+        mainPanel.setBackground(Theme.COLOR_BACKGROUND); 
         
         // Title 
         JLabel titleLabel = new JLabel("GAME Ô CHỮ", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 48));
+        titleLabel.setFont(Theme.FONT_TITLE); 
+        titleLabel.setForeground(Theme.COLOR_TEXT_DARK);
         mainPanel.add(titleLabel, BorderLayout.NORTH);
         
         // Panel chính chứa CardLayout
-        mainCardPanel = new JPanel(cardLayout);
+        mainCardPanel = new Theme.RoundedPanel(cardLayout); // Sử dụng RoundedPanel
+        mainCardPanel.setBackground(Theme.COLOR_BACKGROUND); // Màu nền của panel
+        mainCardPanel.setBorder(Theme.BORDER_ROUNDED_PANEL); // Bo tròn viền cho panel chính
+        
         mainCardPanel.add(createLoginPanel(), "LOGIN");
-        mainCardPanel.add(createRegisterPanel(), "REGISTER");
+        JPanel registerFormPanel = createRegisterPanel();
+        JScrollPane registerScrollPane = new JScrollPane(registerFormPanel);
+        registerScrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        registerScrollPane.getViewport().setBackground(Theme.COLOR_BACKGROUND); 
+        registerScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        mainCardPanel.add(registerScrollPane, "REGISTER");
         
         mainPanel.add(mainCardPanel, BorderLayout.CENTER);
         add(mainPanel);
@@ -71,9 +80,10 @@ public class LoginFrame extends JFrame {
      * Tạo panel Đăng nhập
      */
     private JPanel createLoginPanel() {
-        JPanel formPanel = new JPanel(new GridBagLayout());
+        JPanel formPanel = new JPanel(new GridBagLayout()); // Vẫn dùng JPanel thường cho bố cục bên trong
+        formPanel.setBackground(Theme.COLOR_BACKGROUND); 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(20, 20, 20, 20);
+        gbc.insets = new Insets(15, 20, 15, 20); // Giảm bớt insets
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Tài khoản
@@ -81,13 +91,16 @@ public class LoginFrame extends JFrame {
         gbc.gridy = 0;
         gbc.weightx = 0;
         JLabel userLabel = new JLabel("Tài khoản:");
-        userLabel.setFont(new Font("Arial", Font.PLAIN, 28));
+        userLabel.setFont(Theme.FONT_LABEL); 
+        userLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(userLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.5;
-        loginUsernameField = new JTextField(); 
-        loginUsernameField.setFont(new Font("Arial", Font.PLAIN, 28));
+        loginUsernameField = new Theme.RoundedTextField(); // Dùng RoundedTextField
+        loginUsernameField.setFont(Theme.FONT_INPUT); 
+        loginUsernameField.setForeground(Theme.COLOR_TEXT_DARK);
+        loginUsernameField.setBackground(Theme.COLOR_WHITE); // Nền trắng cho input
         loginUsernameField.addActionListener(e -> loginPasswordField.requestFocusInWindow());
         formPanel.add(loginUsernameField, gbc);
 
@@ -96,33 +109,54 @@ public class LoginFrame extends JFrame {
         gbc.gridy = 1;
         gbc.weightx = 0;
         JLabel passLabel = new JLabel("Mật khẩu:");
-        passLabel.setFont(new Font("Arial", Font.PLAIN, 28));
+        passLabel.setFont(Theme.FONT_LABEL); 
+        passLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(passLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.5;
-        loginPasswordField = new JPasswordField();
-        loginPasswordField.setFont(new Font("Arial", Font.PLAIN, 28));
+        loginPasswordField = new Theme.RoundedPasswordField(); // Dùng RoundedPasswordField
+        loginPasswordField.setFont(Theme.FONT_INPUT); 
+        loginPasswordField.setForeground(Theme.COLOR_TEXT_DARK);
+        loginPasswordField.setBackground(Theme.COLOR_WHITE); // Nền trắng cho input
         loginPasswordField.addActionListener(e -> handleLogin());
         formPanel.add(loginPasswordField, gbc);
 
-        // Nút đăng nhập
+        // Nút đăng nhập và đăng ký
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(25, 20, 15, 20); // Khoảng cách giữa input và nút
 
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(Theme.COLOR_BACKGROUND); 
 
         JButton loginButton = new JButton("Đăng nhập");
-        loginButton.setFont(new Font("Arial", Font.BOLD, 28));
+        Theme.styleButtonPrimary(loginButton); 
         loginButton.addActionListener(e -> handleLogin());
         buttonPanel.add(loginButton);
         
-        // Label để chuyển sang Đăng ký
         JButton showRegisterButton = new JButton("Đăng ký");
-        showRegisterButton.setFont(new Font("Arial", Font.BOLD, 28));
+        // Giờ nút Đăng ký cũng là nút chính nhưng màu khác
+        Theme.styleButtonPrimary(showRegisterButton); 
+        showRegisterButton.setBackground(Theme.COLOR_ACCENT); // Đổi màu nền thành accent
+        // Cần cập nhật lại UI sau khi đổi màu background
+        showRegisterButton.setUI(new Theme.RoundedButtonUI()); 
+        ((Theme.RoundedBorder)showRegisterButton.getBorder()).setColor(Theme.COLOR_ACCENT); // Cập nhật màu viền
+        
+        // Thêm hiệu ứng hover riêng cho nút đăng ký (nếu muốn màu khác khi hover)
+        showRegisterButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                showRegisterButton.setBackground(Theme.COLOR_ACCENT.darker());
+                showRegisterButton.repaint();
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                showRegisterButton.setBackground(Theme.COLOR_ACCENT);
+                showRegisterButton.repaint();
+            }
+        });
         showRegisterButton.addActionListener(e -> cardLayout.show(mainCardPanel, "REGISTER"));
         buttonPanel.add(showRegisterButton);
         
@@ -136,114 +170,139 @@ public class LoginFrame extends JFrame {
      */
     private JPanel createRegisterPanel() {
         JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Theme.COLOR_BACKGROUND); 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 20, 10, 20); 
+        gbc.insets = new Insets(8, 20, 8, 20);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
         int y = 0;
 
-        // Tài khoản
-        gbc.gridx = 0;
-        gbc.gridy = y;
-        gbc.weightx = 0;
+        // --- Hàng 1: Tài khoản ---
+        gbc.gridx = 0; gbc.gridy = y; gbc.weightx = 0;
         JLabel userLabel = new JLabel("Tài khoản:");
-        userLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        userLabel.setFont(Theme.FONT_LABEL);
+        userLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(userLabel, gbc);
 
-        gbc.gridx = 1;
-        gbc.weightx = 0.5;
-        regUsernameField = new JTextField();
-        regUsernameField.setFont(new Font("Arial", Font.PLAIN, 24));
+        gbc.gridx = 1; gbc.weightx = 0.5;
+        regUsernameField = new Theme.RoundedTextField();
+        regUsernameField.setFont(Theme.FONT_INPUT);
+        regUsernameField.setForeground(Theme.COLOR_TEXT_DARK);
+        regUsernameField.setBackground(Theme.COLOR_WHITE);
         regUsernameField.addActionListener(e -> regPasswordField.requestFocusInWindow());
         formPanel.add(regUsernameField, gbc);
         y++;
 
-        // Mật khẩu
-        gbc.gridx = 0;
-        gbc.gridy = y;
+        // --- Hàng 2: Mật khẩu ---
+        gbc.gridx = 0; gbc.gridy = y;
         JLabel passLabel = new JLabel("Mật khẩu:");
-        passLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        passLabel.setFont(Theme.FONT_LABEL);
+        passLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(passLabel, gbc);
 
         gbc.gridx = 1;
-        regPasswordField = new JPasswordField();
-        regPasswordField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regPasswordField = new Theme.RoundedPasswordField(); // Dùng RoundedPasswordField
+        regPasswordField.setFont(Theme.FONT_INPUT);
+        regPasswordField.setForeground(Theme.COLOR_TEXT_DARK);
+        regPasswordField.setBackground(Theme.COLOR_WHITE);
         regPasswordField.addActionListener(e -> regConfirmPasswordField.requestFocusInWindow());
         formPanel.add(regPasswordField, gbc);
         y++;
 
-        // Xác nhận Mật khẩu
-        gbc.gridx = 0;
-        gbc.gridy = y;
+        // --- Hàng 3: Xác nhận Mật khẩu ---
+        gbc.gridx = 0; gbc.gridy = y;
         JLabel confirmPassLabel = new JLabel("Xác nhận MK:");
-        confirmPassLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        confirmPassLabel.setFont(Theme.FONT_LABEL);
+        confirmPassLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(confirmPassLabel, gbc);
 
         gbc.gridx = 1;
-        regConfirmPasswordField = new JPasswordField();
-        regConfirmPasswordField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regConfirmPasswordField = new Theme.RoundedPasswordField(); // Dùng RoundedPasswordField
+        regConfirmPasswordField.setFont(Theme.FONT_INPUT);
+        regConfirmPasswordField.setForeground(Theme.COLOR_TEXT_DARK);
+        regConfirmPasswordField.setBackground(Theme.COLOR_WHITE);
         regConfirmPasswordField.addActionListener(e -> regFullNameField.requestFocusInWindow());
         formPanel.add(regConfirmPasswordField, gbc);
         y++;
 
-        // Họ tên 
-        gbc.gridx = 0;
-        gbc.gridy = y;
+        // --- Hàng 4: Họ tên ---
+        gbc.gridx = 0; gbc.gridy = y;
         JLabel fullNameLabel = new JLabel("Họ và Tên:");
-        fullNameLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        fullNameLabel.setFont(Theme.FONT_LABEL);
+        fullNameLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(fullNameLabel, gbc);
 
         gbc.gridx = 1;
-        regFullNameField = new JTextField();
-        regFullNameField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regFullNameField = new Theme.RoundedTextField(); // Dùng RoundedTextField
+        regFullNameField.setFont(Theme.FONT_INPUT);
+        regFullNameField.setForeground(Theme.COLOR_TEXT_DARK);
+        regFullNameField.setBackground(Theme.COLOR_WHITE);
         regFullNameField.addActionListener(e -> regYearOfBirthField.requestFocusInWindow());
         formPanel.add(regFullNameField, gbc);
         y++;
 
-        // Giới tính
+        // --- Hàng 5: Giới tính ---
         gbc.gridx = 0; gbc.gridy = y;
         JLabel genderLabel = new JLabel("Giới tính:");
-        genderLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        genderLabel.setFont(Theme.FONT_LABEL);
+        genderLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(genderLabel, gbc);
 
         gbc.gridx = 1;
         String[] genders = {"Nam", "Nữ", "Khác"};
-        regGenderComboBox = new JComboBox<>(genders);
-        regGenderComboBox.setFont(new Font("Arial", Font.PLAIN, 24));
+        regGenderComboBox = new Theme.RoundedComboBox<>(genders); // Dùng RoundedComboBox
+        regGenderComboBox.setFont(Theme.FONT_INPUT);
+        regGenderComboBox.setForeground(Theme.COLOR_TEXT_DARK);
+        regGenderComboBox.setBackground(Theme.COLOR_WHITE); 
         formPanel.add(regGenderComboBox, gbc);
         y++; 
 
-        // Năm sinh 
-        gbc.gridx = 0;
-        gbc.gridy = y;
+        // --- Hàng 6: Năm sinh ---
+        gbc.gridx = 0; gbc.gridy = y;
         JLabel yearLabel = new JLabel("Năm sinh:");
-        yearLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        yearLabel.setFont(Theme.FONT_LABEL);
+        yearLabel.setForeground(Theme.COLOR_TEXT_DARK);
         formPanel.add(yearLabel, gbc);
 
         gbc.gridx = 1;
-        regYearOfBirthField = new JTextField();
-        regYearOfBirthField.setFont(new Font("Arial", Font.PLAIN, 24));
+        regYearOfBirthField = new Theme.RoundedTextField(); // Dùng RoundedTextField
+        regYearOfBirthField.setFont(Theme.FONT_INPUT);
+        regYearOfBirthField.setForeground(Theme.COLOR_TEXT_DARK);
+        regYearOfBirthField.setBackground(Theme.COLOR_WHITE);
         regYearOfBirthField.addActionListener(e -> handleRegister());
         formPanel.add(regYearOfBirthField, gbc);
         y++;
 
-        // Nút Đăng ký
-        gbc.gridx = 0;
-        gbc.gridy = y;
+        // --- Hàng 7: Nút bấm ---
+        gbc.gridx = 0; gbc.gridy = y;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(20, 20, 8, 20);
 
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(Theme.COLOR_BACKGROUND);
 
-        JButton registerButton = new JButton("Hoàn tất Đăng ký");
-        registerButton.setFont(new Font("Arial", Font.BOLD, 28));
+        JButton registerButton = new JButton("Đăng ký");
+        Theme.styleButtonPrimary(registerButton); 
         registerButton.addActionListener(e -> handleRegister());
         buttonPanel.add(registerButton);
         
-        // Label để quay lại Đăng nhập
         JButton showLoginButton = new JButton("Quay lại");
-        showLoginButton.setFont(new Font("Arial", Font.BOLD, 28));
+        Theme.styleButtonPrimary(showLoginButton);
+        showLoginButton.setBackground(Theme.COLOR_ACCENT);
+        showLoginButton.setUI(new Theme.RoundedButtonUI());
+        ((Theme.RoundedBorder)showLoginButton.getBorder()).setColor(Theme.COLOR_ACCENT);
+        showLoginButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                showLoginButton.setBackground(Theme.COLOR_ACCENT.darker());
+                showLoginButton.repaint();
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                showLoginButton.setBackground(Theme.COLOR_ACCENT);
+                showLoginButton.repaint();
+            }
+        });
         showLoginButton.addActionListener(e -> cardLayout.show(mainCardPanel, "LOGIN"));
         buttonPanel.add(showLoginButton);
         
@@ -302,7 +361,12 @@ public class LoginFrame extends JFrame {
 
         // Gọi AuthController để gửi request đăng ký
         authController.register(username, password, fullName, yearOfBirth, gender);
+        
+        // Tự động chuyển về màn hình đăng nhập và xóa form
         cardLayout.show(mainCardPanel, "LOGIN");
+        loginUsernameField.setText(username); // Điền sẵn tên đăng nhập
+        loginPasswordField.setText("");
+        
         regUsernameField.setText("");
         regPasswordField.setText("");
         regConfirmPasswordField.setText("");
@@ -312,6 +376,8 @@ public class LoginFrame extends JFrame {
     }
     
     public void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        JLabel label = new JLabel(message);
+        label.setFont(Theme.FONT_INPUT); 
+        JOptionPane.showMessageDialog(this, label, "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }

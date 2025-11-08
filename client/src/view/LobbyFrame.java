@@ -1,7 +1,9 @@
 package view;
 
+// Import tất cả các thành phần từ Theme
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -57,6 +59,8 @@ public class LobbyFrame extends JFrame {
 
         JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
         mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        // Áp dụng Theme
+        mainPanel.setBackground(Theme.COLOR_BACKGROUND);
 
         // Top panel
         JPanel topPanel = createTopPanel();
@@ -65,14 +69,25 @@ public class LobbyFrame extends JFrame {
         // Center panel with CardLayout
         cardLayout = new CardLayout();
         centerCardPanel = new JPanel(cardLayout);
+        // Áp dụng Theme
+        centerCardPanel.setBackground(Theme.COLOR_BACKGROUND);
+        centerCardPanel.setOpaque(false);
 
         // Game panel
         JPanel gamePanel = new JPanel(new GridLayout(1, 2, 30, 0));
+        // Áp dụng Theme
+        gamePanel.setBackground(Theme.COLOR_BACKGROUND);
+        gamePanel.setOpaque(false); 
+        
         JPanel gameOptionsPanel = createGameOptionsPanel();
         JPanel onlineUsersPanel = createOnlineUsersPanel();
         gamePanel.add(gameOptionsPanel);
         gamePanel.add(onlineUsersPanel);
-        centerCardPanel.add(gamePanel, "GAME");
+        
+        JScrollPane gameScrollPane = new JScrollPane(gamePanel);
+        gameScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        gameScrollPane.getViewport().setBackground(Theme.COLOR_BACKGROUND);
+        centerCardPanel.add(gameScrollPane, "GAME");
 
         // Ranking panel
         rankingPanel = new RankingPanel(e -> showGamePanel());
@@ -90,10 +105,12 @@ public class LobbyFrame extends JFrame {
 
         // Status bar
         statusLabel = new JLabel("Đã kết nối. Chào mừng " + currentUser.getName() + "!");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        // Áp dụng Theme
+        statusLabel.setFont(Theme.FONT_INPUT); 
+        statusLabel.setForeground(Theme.COLOR_TEXT_DARK);
         statusLabel.setBorder(new EmptyBorder(5, 10, 5, 10));
         statusLabel.setOpaque(true);
-        statusLabel.setBackground(new java.awt.Color(230, 230, 230));
+        statusLabel.setBackground(Theme.COLOR_BACKGROUND); 
         mainPanel.add(statusLabel, BorderLayout.SOUTH);
 
         add(mainPanel);
@@ -104,26 +121,41 @@ public class LobbyFrame extends JFrame {
     }
 
     private JPanel createTopPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Thông tin người chơi"));
+        JPanel panel = new Theme.RoundedPanel(new BorderLayout());
+        panel.setBackground(Theme.COLOR_WHITE);
+        panel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
         JPanel userInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 30, 10));
-        Font infoFont = new Font("Arial", Font.PLAIN, 18);
-        userInfoPanel.add(new JLabel("Tên: " + currentUser.getName())).setFont(infoFont);
-        userInfoPanel.add(new JLabel("Điểm: " + currentUser.getScore())).setFont(infoFont);
-        userInfoPanel.add(new JLabel("Xếp hạng: " + (currentUser.getRank() == -1 ? "Chưa xếp hạng" : currentUser.getRank()))).setFont(infoFont);
+        // Áp dụng Theme
+        userInfoPanel.setBackground(Theme.COLOR_WHITE); 
+        
+        JLabel nameLabel = new JLabel("Tên: " + currentUser.getName());
+        nameLabel.setFont(Theme.FONT_INPUT);
+        nameLabel.setForeground(Theme.COLOR_TEXT_DARK);
+        
+        JLabel scoreLabel = new JLabel("Điểm: " + currentUser.getScore());
+        scoreLabel.setFont(Theme.FONT_INPUT);
+        scoreLabel.setForeground(Theme.COLOR_TEXT_DARK);
+        
+        JLabel rankLabel = new JLabel("Xếp hạng: " + (currentUser.getRank() == -1 ? "Chưa xếp hạng" : currentUser.getRank()));
+        rankLabel.setFont(Theme.FONT_INPUT);
+        rankLabel.setForeground(Theme.COLOR_TEXT_DARK);
+
+        userInfoPanel.add(nameLabel);
+        userInfoPanel.add(scoreLabel);
+        userInfoPanel.add(rankLabel);
         panel.add(userInfoPanel, BorderLayout.CENTER);
 
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 5));
-        Font smallButtonFont = new Font("Arial", Font.BOLD, 16);
+        controlPanel.setBackground(Theme.COLOR_WHITE); 
 
         JButton profileButton = new JButton("Hồ sơ");
-        profileButton.setFont(smallButtonFont);
-        profileButton.setPreferredSize(new Dimension(120, 40));
+        Theme.styleButtonSecondary(profileButton); 
+        profileButton.setPreferredSize(new Dimension(120, 40)); // Điều chỉnh kích thước nếu cần
         profileButton.addActionListener(e -> controller.viewProfile(currentUser.getId()));
 
         JButton logoutButton = new JButton("Đăng xuất");
-        logoutButton.setFont(smallButtonFont);
+        Theme.styleButtonSecondary(logoutButton); 
         logoutButton.setPreferredSize(new Dimension(120, 40));
         logoutButton.addActionListener(e -> controller.logout());
 
@@ -135,31 +167,57 @@ public class LobbyFrame extends JFrame {
     }
 
     private JPanel createGameOptionsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Tùy chọn trận đấu"));
+        JPanel panel = new Theme.RoundedPanel(new BorderLayout());
+        panel.setBackground(Theme.COLOR_WHITE);
+        
+        JLabel titleLabel = new JLabel("Tùy chọn trận đấu", JLabel.CENTER);
+        titleLabel.setFont(Theme.FONT_LABEL);
+        titleLabel.setForeground(Theme.COLOR_PRIMARY);
+        titleLabel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        panel.add(titleLabel, BorderLayout.NORTH);
 
         matchmakingCardLayout = new CardLayout();
         matchmakingCardPanel = new JPanel(matchmakingCardLayout);
+        matchmakingCardPanel.setBackground(Theme.COLOR_WHITE); 
 
-        Font mainButtonFont = new Font("Arial", Font.BOLD, 20);
         Dimension mainButtonSize = new Dimension(250, 50);
 
+        // --- Panel chờ ---
         JPanel matchmakeIdlePanel = new JPanel(new BorderLayout());
+        matchmakeIdlePanel.setBackground(Theme.COLOR_WHITE);
+        matchmakeIdlePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         btnMatchmake = new JButton("Ghép đấu");
-        btnMatchmake.setFont(mainButtonFont);
+
+        Theme.styleButtonPrimary(btnMatchmake); 
+        btnMatchmake.setBackground(Theme.COLOR_ACCENT); 
+        btnMatchmake.setUI(new Theme.RoundedButtonUI()); 
+        ((Theme.RoundedBorder)btnMatchmake.getBorder()).setColor(Theme.COLOR_ACCENT);
+        btnMatchmake.addMouseListener(createHoverEffect(btnMatchmake, Theme.COLOR_ACCENT));
+        
         btnMatchmake.setPreferredSize(mainButtonSize);
         btnMatchmake.addActionListener(e -> controller.requestMatchmaking());
         matchmakeIdlePanel.add(btnMatchmake, BorderLayout.CENTER);
 
+        // --- Panel đang tìm trận ---
         JPanel matchmakeWaitingPanel = new JPanel(new BorderLayout(10, 10));
-        matchmakeWaitingPanel.setBorder(new EmptyBorder(5, 5, 5, 5)); // Thêm chút padding
+        matchmakeWaitingPanel.setBackground(Theme.COLOR_WHITE);
+        matchmakeWaitingPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         btnCancelMatchmake = new JButton("Hủy tìm trận");
-        btnCancelMatchmake.setFont(mainButtonFont);
+
+        Theme.styleButtonPrimary(btnCancelMatchmake); 
+        Color cancelColor = new Color(220, 53, 69);
+        btnCancelMatchmake.setBackground(cancelColor);
+        btnCancelMatchmake.setUI(new Theme.RoundedButtonUI()); 
+        ((Theme.RoundedBorder)btnCancelMatchmake.getBorder()).setColor(cancelColor);
+        btnCancelMatchmake.addMouseListener(createHoverEffect(btnCancelMatchmake, cancelColor));
+
         btnCancelMatchmake.setPreferredSize(mainButtonSize);
         btnCancelMatchmake.addActionListener(e -> controller.cancelMatchmaking());
 
         lblMatchmakeStatus = new JLabel("Đang tìm trận...", JLabel.CENTER);
-        lblMatchmakeStatus.setFont(new Font("Arial", Font.ITALIC, 16));
+ 
+        lblMatchmakeStatus.setFont(Theme.FONT_INPUT); 
+        lblMatchmakeStatus.setForeground(Theme.COLOR_TEXT_DARK);
 
         matchmakeWaitingPanel.add(lblMatchmakeStatus, BorderLayout.NORTH);
         matchmakeWaitingPanel.add(btnCancelMatchmake, BorderLayout.CENTER);
@@ -168,16 +226,30 @@ public class LobbyFrame extends JFrame {
         matchmakingCardPanel.add(matchmakeWaitingPanel, "WAITING");
         matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
 
+        // --- Panel chứa các nút còn lại ---
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 0, 20));
+        buttonPanel.setBackground(Theme.COLOR_WHITE);
         buttonPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
 
         JButton historyButton = new JButton("Lịch sử trận đấu");
-        historyButton.setFont(mainButtonFont);
+
+        Theme.styleButtonPrimary(historyButton); 
+        historyButton.setBackground(Theme.COLOR_ACCENT);
+        historyButton.setUI(new Theme.RoundedButtonUI()); 
+        ((Theme.RoundedBorder)historyButton.getBorder()).setColor(Theme.COLOR_ACCENT);
+        historyButton.addMouseListener(createHoverEffect(historyButton, Theme.COLOR_ACCENT));
+        
         historyButton.setPreferredSize(mainButtonSize);
         historyButton.addActionListener(e -> controller.showMatchHistory());
 
         JButton rankingButton = new JButton("Xem bảng xếp hạng");
-        rankingButton.setFont(mainButtonFont);
+
+        Theme.styleButtonPrimary(rankingButton); 
+        rankingButton.setBackground(Theme.COLOR_ACCENT); 
+        rankingButton.setUI(new Theme.RoundedButtonUI());
+        ((Theme.RoundedBorder)rankingButton.getBorder()).setColor(Theme.COLOR_ACCENT);
+        rankingButton.addMouseListener(createHoverEffect(rankingButton, Theme.COLOR_ACCENT));
+
         rankingButton.setPreferredSize(mainButtonSize);
         rankingButton.addActionListener(e -> showRankingPanel());
 
@@ -188,16 +260,41 @@ public class LobbyFrame extends JFrame {
         panel.add(buttonPanel, BorderLayout.CENTER);
         return panel;
     }
+    
+    private MouseAdapter createHoverEffect(JButton button, Color baseColor) {
+        return new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(baseColor.darker());
+                button.repaint();
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(baseColor);
+                button.repaint();
+            }
+        };
+    }
 
     private JPanel createOnlineUsersPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Người chơi trực tuyến"));
+        JPanel panel = new Theme.RoundedPanel(new BorderLayout());
+        panel.setBackground(Theme.COLOR_WHITE);
+
+        JLabel titleLabel = new JLabel("Người chơi trực tuyến", JLabel.CENTER);
+        titleLabel.setFont(Theme.FONT_LABEL);
+        titleLabel.setForeground(Theme.COLOR_PRIMARY);
+        titleLabel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        panel.add(titleLabel, BorderLayout.NORTH);
 
         onlineUsersModel = new DefaultListModel<>();
         onlineUsersList = new JList<>(onlineUsersModel);
         onlineUsersList.setCellRenderer(new UserListCellRenderer());
         onlineUsersList.setFixedCellHeight(45);
-        onlineUsersList.setFont(new Font("Arial", Font.PLAIN, 16));
+
+        onlineUsersList.setFont(Theme.FONT_INPUT); 
+        onlineUsersList.setBackground(Theme.COLOR_WHITE);
+        onlineUsersList.setForeground(Theme.COLOR_TEXT_DARK);
+        onlineUsersList.setSelectionBackground(Theme.COLOR_ACCENT);
+        onlineUsersList.setSelectionForeground(Theme.COLOR_TEXT_DARK);
+        
         onlineUsersList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -212,29 +309,37 @@ public class LobbyFrame extends JFrame {
         });
 
         JScrollPane scrollPane = new JScrollPane(onlineUsersList);
+
+        scrollPane.getViewport().setBackground(Theme.COLOR_WHITE);
+        scrollPane.setBorder(new Theme.RoundedBorder(Theme.COLOR_BORDER, 1, Theme.CORNER_RADIUS));
+        scrollPane.setBackground(Theme.COLOR_WHITE);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 15));
-        Font smallButtonFont = new Font("Arial", Font.BOLD, 16);
-        Dimension smallButtonSize = new Dimension(120, 40);
+
+        actionPanel.setBackground(Theme.COLOR_WHITE); 
+        
+        Dimension smallButtonSize = new Dimension(140, 45); 
 
         inviteButton = new JButton("Mời đấu");
-        inviteButton.setFont(smallButtonFont);
+
+        Theme.styleButtonPrimary(inviteButton); 
         inviteButton.setPreferredSize(smallButtonSize);
         inviteButton.addActionListener(e -> {
             User selectedUser = onlineUsersList.getSelectedValue();
             if (selectedUser != null && selectedUser.getId() != currentUser.getId()) {
                 controller.sendInvite(selectedUser.getId());
-                JOptionPane.showMessageDialog(this, "Đã gửi lời mời đấu tới " + selectedUser.getName());
+                showInfo("Đã gửi lời mời đấu tới " + selectedUser.getName());
             } else if (selectedUser != null && selectedUser.getId() == currentUser.getId()) {
-                JOptionPane.showMessageDialog(this, "Bạn không thể tự mời chính mình!");
+                showError("Bạn không thể tự mời chính mình!");
             } else {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một người chơi trước!");
+                showError("Vui lòng chọn một người chơi trước!");
             }
         });
 
         JButton refreshButton = new JButton("Làm mới");
-        refreshButton.setFont(smallButtonFont);
+
+        Theme.styleButtonSecondary(refreshButton); 
         refreshButton.setPreferredSize(smallButtonSize);
         refreshButton.addActionListener(e -> controller.requestOnlineUsers());
 
@@ -266,63 +371,59 @@ public class LobbyFrame extends JFrame {
     }
 
     public void updateButtonsForReconnect(String reconnectMatchId) {
-        // Đảm bảo code này chạy trên Event Dispatch Thread
         javax.swing.SwingUtilities.invokeLater(() -> {
             
             // TRƯỜNG HỢP 1: CÓ TRẬN ĐỂ KẾT NỐI LẠI
             if (reconnectMatchId != null) {
-                
-                // 1. Ẩn nút "Mời đấu"
                 if (inviteButton != null) {
                     inviteButton.setVisible(false);
                 }
-                
-                // 2. Chuyển về "IDLE" (để đảm bảo không bị kẹt ở "Đang tìm trận")
                 matchmakingCardLayout.show(matchmakingCardPanel, "IDLE");
-
-                // 3. Thay đổi nút "Ghép đấu" -> "Kết nối lại"
                 btnMatchmake.setText("Kết nối lại trận đấu");
+                
+                // Đảm bảo nút có màu đỏ cảnh báo
+                btnMatchmake.setBackground(Color.RED.darker());
+                btnMatchmake.setUI(new Theme.RoundedButtonUI());
+                ((Theme.RoundedBorder)btnMatchmake.getBorder()).setColor(Color.RED.darker());
+                btnMatchmake.addMouseListener(createHoverEffect(btnMatchmake, Color.RED.darker()));
 
-                // 4. Gỡ listener cũ và thêm listener "Reconnect" MỚI
                 for (java.awt.event.ActionListener al : btnMatchmake.getActionListeners()) {
                     btnMatchmake.removeActionListener(al);
                 }
-                btnMatchmake.addActionListener(e -> {
-                    controller.requestReconnect(); 
-                });
+                btnMatchmake.addActionListener(e -> controller.requestReconnect());
 
             } 
             // TRƯỜNG HỢP 2: TRẠNG THÁI BÌNH THƯỜNG
             else { 
-                
-                // 1. Hiện lại nút "Mời đấu"
                 if (inviteButton != null) {
                     inviteButton.setVisible(true);
                 }
-
-                // 2. Gỡ listener "Reconnect" (nếu có)
                 for (java.awt.event.ActionListener al : btnMatchmake.getActionListeners()) {
                     btnMatchmake.removeActionListener(al);
                 }
-                
-                // 3. Thêm lại listener "Ghép đấu" (listener gốc)
                 btnMatchmake.addActionListener(e -> controller.requestMatchmaking());
-                
-                // 4. Reset text về "Ghép đấu"
                 btnMatchmake.setText("Ghép đấu"); 
-                
-                // 5. Đưa về trạng thái "IDLE"
+
+                btnMatchmake.setBackground(Theme.COLOR_PRIMARY);
+                btnMatchmake.setUI(new Theme.RoundedButtonUI());
+                ((Theme.RoundedBorder)btnMatchmake.getBorder()).setColor(Theme.COLOR_PRIMARY);
+                btnMatchmake.addMouseListener(createHoverEffect(btnMatchmake, Theme.COLOR_PRIMARY));
+
                 setMatchmakingStatus(false); 
             }
         });
     }
 
     public void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        JLabel label = new JLabel(message);
+        label.setFont(Theme.FONT_INPUT);
+        JOptionPane.showMessageDialog(this, label, "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 
     public void showInfo(String message) {
-        JOptionPane.showMessageDialog(this, message, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        JLabel label = new JLabel(message);
+        label.setFont(Theme.FONT_INPUT);
+        JOptionPane.showMessageDialog(this, label, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void showGamePanel() {
@@ -330,6 +431,7 @@ public class LobbyFrame extends JFrame {
     }
 
     private void showRankingPanel() {
+        controller.requestRankingUpdate();
         cardLayout.show(centerCardPanel, "RANKING");
     }
 
@@ -341,8 +443,7 @@ public class LobbyFrame extends JFrame {
     public void updateRankings(List<model.Ranking> rankings) {
         if (rankings != null && !rankings.isEmpty()) {
             rankingPanel.updateRankings(rankings);
-            // Highlight người chơi hiện tại nếu có trong danh sách
-            rankingPanel.highlightCurrentPlayer(currentUser.getName());
+            rankingPanel.highlightCurrentPlayer(currentUser.getUsername());
         }
     }
 
@@ -353,21 +454,26 @@ public class LobbyFrame extends JFrame {
         }
     }
 
+    // Tùy chỉnh Cell Renderer để áp dụng Theme
     private class UserListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
+            
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            label.setFont(Theme.FONT_INPUT);
+            label.setBorder(new EmptyBorder(5, 15, 5, 15));
 
             if (value instanceof User) {
                 User user = (User) value;
                 label.setText(user.getName() + " (" + user.getScore() + ")");
+                
                 if (user.getId() == currentUser.getId()) {
-                    label.setFont(label.getFont().deriveFont(Font.BOLD));
+                    label.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD));
                     label.setText(label.getText() + " (Bạn)");
                 }
-            }
-
+            }          
             return label;
         }
     }

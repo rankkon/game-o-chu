@@ -307,14 +307,14 @@ public class LobbyController implements SocketHandler.SocketListener {
         if (lobbyFrame != null) {
             lobbyFrame.setMatchmakingStatus(false);
         }
-        
+        JsonObject gameData = data.has("data") ? data.get("data").getAsJsonObject() : data;
         if (gameFrame == null) {
             gameFrame = new view.GameFrame();
             gameFrame.setSelfUserId(currentUser.getId());
             gameFrame.setSocketHandler(socketHandler);
             
             // Set player names from match data
-            JsonObject players = data.has("players") ? data.get("players").getAsJsonObject() : null;
+            JsonObject players = gameData.has("players") ? gameData.get("players").getAsJsonObject() : null;
             if (players != null) {
                 String player1Name = currentUser.getName();
                 String player2Name = "Đối thủ";
