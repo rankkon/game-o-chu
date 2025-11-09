@@ -295,10 +295,28 @@ MatchService {
             ps.addScore(2);
             ps.addCorrectWord();
             word.setBonusGiven(true);
+            
+            // Kiểm tra xem người chơi đã hoàn thành hết tất cả từ chưa
+            if (checkPlayerCompletedAllWords(ps, pWords)) {
+                // Lưu thời gian hoàn thành của người chơi này
+                ps.setCompletionTime(System.currentTimeMillis());
+                System.out.println("Player " + playerId + " completed all words at " + ps.getCompletionTime());
+                // KHÔNG kết thúc trận ngay, chờ đến khi hết thời gian để so sánh điểm
+            }
         }
 
         // Broadcast the room DTO (which now contains per-player revealed patterns)
         broadcastMatchUpdate(room);
+    }
+    
+    private boolean checkPlayerCompletedAllWords(PlayerState ps, java.util.List<WordInstance> pWords) {
+        // Kiểm tra xem tất cả các từ đã được hoàn thành chưa
+        for (WordInstance word : pWords) {
+            if (!word.isFullyCorrect()) {
+                return false; // Còn từ chưa hoàn thành
+            }
+        }
+        return true; // Tất cả từ đã hoàn thành
     }
 
     // Backward-compatible overload for String playerId
@@ -361,27 +379,74 @@ MatchService {
 
         // Determine end and winner
         long now = System.currentTimeMillis();
-        // compute remaining time relative to scheduled end (could be 0 if timed out)
         long scheduledEnd = room.getEndTime();
-        long remainingMs = Math.max(0, scheduledEnd - now);
         Integer winnerTimeRemainingSec = null; // seconds
 
         PlayerState p1 = room.getPlayers().get(room.getCreatorId());
         PlayerState p2 = room.getPlayers().get(room.getOpponentId());
 
         int winnerId;
-        if (p1.getScore() > p2.getScore()) winnerId = room.getCreatorId();
-        else if (p2.getScore() > p1.getScore()) winnerId = room.getOpponentId();
-        else winnerId = (p1.getLastScoreAt() < p2.getLastScoreAt()) ? room.getCreatorId() : room.getOpponentId();
+        long actualEndTime = now; // Mặc định là thời gian hiện tại
+        
+        // Logic mới: Xác định winner dựa trên điểm số trước (ưu tiên cao nhất)
+        if (p1.getScore() > p2.getScore()) {
+            // P1 có điểm cao hơn -> P1 thắng
+            winnerId = room.getCreatorId();
+            // Nếu P1 đã hoàn thành, dùng thời gian hoàn thành của P1
+            if (p1.getCompletionTime() > 0) {
+                actualEndTime = p1.getCompletionTime();
+            }
+        } else if (p2.getScore() > p1.getScore()) {
+            // P2 có điểm cao hơn -> P2 thắng  
+            winnerId = room.getOpponentId();
+            // Nếu P2 đã hoàn thành, dùng thời gian hoàn thành của P2
+            if (p2.getCompletionTime() > 0) {
+                actualEndTime = p2.getCompletionTime();
+            }
+        } else {
+            // Điểm bằng nhau -> xem ai hoàn thành sớm hơn hoặc lastScoreAt
+            boolean p1Completed = checkPlayerCompletedAllWords(p1, p1.getPersonalWords());
+            boolean p2Completed = checkPlayerCompletedAllWords(p2, p2.getPersonalWords());
+            
+            if (p1Completed && p2Completed) {
+                // Cả 2 đều hoàn thành -> ai hoàn thành sớm hơn thắng
+                if (p1.getCompletionTime() < p2.getCompletionTime()) {
+                    winnerId = room.getCreatorId();
+                    actualEndTime = p1.getCompletionTime();
+                } else if (p2.getCompletionTime() < p1.getCompletionTime()) {
+                    winnerId = room.getOpponentId();
+                    actualEndTime = p2.getCompletionTime();
+                } else {
+                    // Hoàn thành cùng lúc -> dùng lastScoreAt
+                    winnerId = (p1.getLastScoreAt() < p2.getLastScoreAt()) ? room.getCreatorId() : room.getOpponentId();
+                    actualEndTime = (winnerId == room.getCreatorId()) ? p1.getCompletionTime() : p2.getCompletionTime();
+                }
+            } else if (p1Completed) {
+                // Chỉ P1 hoàn thành -> P1 thắng
+                winnerId = room.getCreatorId();
+                actualEndTime = p1.getCompletionTime();
+            } else if (p2Completed) {
+                // Chỉ P2 hoàn thành -> P2 thắng
+                winnerId = room.getOpponentId();
+                actualEndTime = p2.getCompletionTime();
+            } else {
+                // Không ai hoàn thành -> dùng lastScoreAt
+                winnerId = (p1.getLastScoreAt() < p2.getLastScoreAt()) ? room.getCreatorId() : room.getOpponentId();
+                // actualEndTime = now (giữ nguyên thời gian hiện tại)
+            }
+        }
 
         
 
-        // remaining time only meaningful for the winner
-        winnerTimeRemainingSec = (int) (remainingMs / 1000);
+        // Tính remaining time cho winner dựa trên actualEndTime
+        long winnerRemainingMs = Math.max(0, scheduledEnd - actualEndTime);
+        winnerTimeRemainingSec = (int) (winnerRemainingMs / 1000);
 
-        // Set room end time to now and mark finished
-        room.setEndTime(now);
+        // Set room end time theo thời gian thực tế kết thúc và mark finished
+        room.setEndTime(actualEndTime);
         room.setStatus("FINISHED");
+        
+        System.out.println("Match ended. Winner: " + winnerId + ", ActualEndTime: " + actualEndTime + ", WinnerRemainingTime: " + winnerTimeRemainingSec + "s");
 
         // Update user stats: winner +100 score, both players MatchCount++ and Win/Lose++ accordingly
         Integer loserId = (winnerId == room.getCreatorId()) ? room.getOpponentId() : room.getCreatorId();
@@ -403,6 +468,13 @@ MatchService {
         payload.put("action", "match_result");
         payload.put("roomId", roomId);
         payload.put("winner", winnerId);
+        
+        // Thêm thông tin lý do thắng
+        boolean winnerCompleted = (winnerId == room.getCreatorId()) ? 
+            checkPlayerCompletedAllWords(p1, p1.getPersonalWords()) : 
+            checkPlayerCompletedAllWords(p2, p2.getPersonalWords());
+        payload.put("winByCompletion", winnerCompleted);
+        
         // Include human-friendly winner name for clients
         try {
             model.User winnerUser = userService.getUserById(winnerId);

@@ -141,7 +141,6 @@ public class MatchHistoryPanel extends JPanel {
         switch (result) {
             case "WIN": return "Thắng";
             case "LOSE": return "Thua";
-            case "DRAW": return "Hòa";
             default: return result;
         }
     }

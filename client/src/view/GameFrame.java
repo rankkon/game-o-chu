@@ -895,8 +895,6 @@ public class GameFrame extends javax.swing.JFrame {
                 winner = "Chúc mừng! Bạn đã thắng!";
             } else if (opponentScore > myScore) {
                 winner = "Đối thủ đã thắng!";
-            } else {
-                winner = "Hòa!";
             }
         } catch (NumberFormatException e) {
             winner = "Trận đấu đã kết thúc!";
@@ -906,6 +904,31 @@ public class GameFrame extends javax.swing.JFrame {
         jLabel6.setText(winner);
         jLabel6.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD, 16f));
         jLabel6.setForeground(new Color(220, 53, 69)); // Màu đỏ để nổi bật
+    }
+    
+    public void showMatchResult(int winnerId, String winnerName, boolean winByCompletion) {
+        String resultMessage = "";
+        
+        if (winnerId == selfUserId) {
+            // Người chơi hiện tại thắng
+            if (winByCompletion) {
+                resultMessage = "Chúc mừng! Bạn hoàn thành hết từ!";
+            } else {
+                resultMessage = "Chúc mừng! Bạn đã thắng!";
+            }
+        } else {
+            // Đối thủ thắng
+            if (winByCompletion) {
+                resultMessage = "Đối thủ hoàn thành hết từ!";
+            } else {
+                resultMessage = "Đối thủ đã thắng!";
+            }
+        }
+        
+        // Hiển thị kết quả trên label thời gian
+        jLabel7.setText(resultMessage);
+        jLabel7.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD, 16f));
+        jLabel7.setForeground(new Color(220, 53, 69)); // Màu đỏ để nổi bật
     }
 
     public void setSocketHandler(SocketHandler socketHandler) {

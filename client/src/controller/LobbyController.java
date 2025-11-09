@@ -346,6 +346,13 @@ public class LobbyController implements SocketHandler.SocketListener {
         if (winnerName == null || winnerName.trim().isEmpty()) {
             winnerName = data.has("winner") ? data.get("winner").getAsString() : "";
         }
+        
+        // Gửi thông tin kết quả đến GameFrame để hiển thị
+        if (gameFrame != null) {
+            boolean winByCompletion = data.has("winByCompletion") ? data.get("winByCompletion").getAsBoolean() : false;
+            int winnerId = data.has("winner") ? data.get("winner").getAsInt() : 0;
+            gameFrame.showMatchResult(winnerId, winnerName, winByCompletion);
+        }
 
         if (lobbyFrame != null) {
             // Chỉ cần yêu cầu lại danh sách online; bảng xếp hạng đã được server broadcast

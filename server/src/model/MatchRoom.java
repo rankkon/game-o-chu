@@ -77,6 +77,7 @@ public class MatchRoom {
             pd.put("score", ps.getScore());
             pd.put("correctWords", ps.getCorrectWords());
             pd.put("lastScoreAt", ps.getLastScoreAt());
+            pd.put("completionTime", ps.getCompletionTime()); // Thời gian hoàn thành hết từ
             
             // Thêm thông tin người chơi nếu có
             if (ps.getUser() != null) {
