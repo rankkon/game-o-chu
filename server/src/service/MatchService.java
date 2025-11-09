@@ -8,6 +8,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
+import dao.CategoryDAO;
+import dao.DictionaryDAO;
+import dao.UserDAO;
 import model.MatchRoom;
 import model.PlayerState;
 import model.User;
@@ -71,9 +74,9 @@ MatchService {
         room.setStartTime(System.currentTimeMillis());
         room.setEndTime(room.getStartTime() + 90_000); // 90s
 
-    // Lấy 5 từ ngẫu nhiên theo chủ đề (mặc định HOAQUA nếu chưa set)
-    String categoryCode = room.getCategoryCode() != null ? room.getCategoryCode() : "HOAQUA";
-    List<WordInstance> canonicalWords = dictionaryService.getRandomWordsByCategory(categoryCode, 5);
+        // Chọn chủ đề ngẫu nhiên từ database
+        String categoryCode = categoryDAO.getRandomCategoryCode();
+        List<WordInstance> canonicalWords = dictionaryService.getRandomWordsByCategory(categoryCode, 5);
     // Keep canonical words for hints/length only
     room.setWords(canonicalWords);
         room.setCategoryCode(categoryCode);

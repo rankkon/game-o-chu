@@ -87,6 +87,11 @@ public class GameFrame extends javax.swing.JFrame {
     
     // Label hiển thị chủ đề game
     private JLabel lblTopicName;
+    
+    // Biến track trạng thái game
+    private boolean isGameFinished = false;
+    private List<String> originalHints = new ArrayList<>(); // Lưu hint gốc để hiển thị sau khi hết giờ
+    
     // --- KẾT THÚC BIẾN KHAI BÁO ---
 
 
@@ -383,6 +388,10 @@ public class GameFrame extends javax.swing.JFrame {
 
     // Game methods for handling match data
     public void loadMatchStart(JsonObject envelope) {
+        // Reset trạng thái game
+        isGameFinished = false;
+        originalHints.clear();
+        
         this.roomId = envelope.has("roomId") ? envelope.get("roomId").getAsString() : this.roomId;
         JsonObject data = envelope.has("data") ? envelope.get("data").getAsJsonObject() : envelope;
         
@@ -447,14 +456,23 @@ public class GameFrame extends javax.swing.JFrame {
             String hint = w.has("hint") ? w.get("hint").getAsString() : "";
             int len = w.has("length") ? w.get("length").getAsInt() : 0;
 
+            // Lưu hint gốc để hiển thị sau khi hết giờ
+            if (wi >= originalHints.size()) {
+                originalHints.add(hint);
+            } else if (originalHints.size() > wi) {
+                originalHints.set(wi, hint);
+            }
+
             Theme.RoundedPanel row = new Theme.RoundedPanel(new BorderLayout(10, 10));
             row.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             row.setBackground(Theme.COLOR_WHITE);
             
-            JLabel hintLabel = new JLabel(hint);
+            // Ẩn hint nếu game chưa kết thúc, chỉ hiển thị số thứ tự
+            String displayText = isGameFinished ? hint : "Từ " + (wi + 1);
+            JLabel hintLabel = new JLabel(displayText);
             hintLabel.setPreferredSize(new Dimension(200, 30));
             hintLabel.setFont(Theme.FONT_INPUT); 
-            hintLabel.setForeground(Theme.COLOR_TEXT_DARK);
+            hintLabel.setForeground(isGameFinished ? Theme.COLOR_TEXT_DARK : Theme.COLOR_PRIMARY);
             hintLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
             row.add(hintLabel, BorderLayout.WEST);
 
@@ -728,6 +746,14 @@ public class GameFrame extends javax.swing.JFrame {
             updateTimerFromMillis(remain);
             if (remain <= 0) {
                 stopCountdown();
+                // Khi hết giờ, hiển thị hint
+                showHintsAfterGameEnd();
+                // Hiển thị dialog kết quả sau 2 giây để người chơi xem hint
+                javax.swing.Timer resultTimer = new javax.swing.Timer(2000, e -> {
+                    showGameResultDialog();
+                });
+                resultTimer.setRepeats(false);
+                resultTimer.start();
             }
         });
         countdownTimer.setCoalesce(true);
@@ -739,6 +765,41 @@ public class GameFrame extends javax.swing.JFrame {
             countdownTimer.stop();
             countdownTimer = null;
         }
+    }
+
+    private void showHintsAfterGameEnd() {
+        isGameFinished = true;
+        
+        // Cập nhật lại hiển thị hint trên UI
+        for (int i = 0; i < boardPanel.getComponentCount(); i++) {
+            java.awt.Component comp = boardPanel.getComponent(i);
+            if (comp instanceof JPanel && comp != lblTopicName) {
+                JPanel wordsContainer = (JPanel) comp;
+                for (int j = 0; j < wordsContainer.getComponentCount(); j++) {
+                    java.awt.Component rowComp = wordsContainer.getComponent(j);
+                    if (rowComp instanceof Theme.RoundedPanel) {
+                        Theme.RoundedPanel row = (Theme.RoundedPanel) rowComp;
+                        // Tìm JLabel hint trong row
+                        for (java.awt.Component rowChild : row.getComponents()) {
+                            if (rowChild instanceof JLabel) {
+                                JLabel hintLabel = (JLabel) rowChild;
+                                // Cập nhật text hint từ originalHints
+                                if (j < originalHints.size()) {
+                                    hintLabel.setText(originalHints.get(j));
+                                    hintLabel.setForeground(Theme.COLOR_TEXT_DARK);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        
+        // Refresh UI
+        boardPanel.revalidate();
+        boardPanel.repaint();
     }
 
     private void focusNext(List<JTextField> inputs, int currentIdx) {
@@ -836,6 +897,10 @@ public class GameFrame extends javax.swing.JFrame {
     }
 
     public void clearBoard() {
+        // Reset trạng thái game
+        isGameFinished = false;
+        originalHints.clear();
+        
         // Reset chủ đề về trạng thái chờ
         lblTopicName.setText("Chờ bắt đầu trận đấu...");
         

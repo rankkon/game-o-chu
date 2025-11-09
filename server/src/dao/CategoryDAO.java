@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import util.DBConnection;
 
@@ -34,6 +36,31 @@ public class CategoryDAO {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    public List<String> getAllCategoryCodes() {
+        List<String> categories = new ArrayList<>();
+        String sql = "SELECT category_code FROM category";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    categories.add(rs.getString("category_code"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return categories;
+    }
+    
+    public String getRandomCategoryCode() {
+        List<String> categories = getAllCategoryCodes();
+        if (categories.isEmpty()) {
+            return "HOAQUA"; // fallback default
+        }
+        int randomIndex = (int) (Math.random() * categories.size());
+        return categories.get(randomIndex);
     }
 }
 
