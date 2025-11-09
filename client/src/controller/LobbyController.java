@@ -597,7 +597,6 @@ public class LobbyController implements SocketHandler.SocketListener {
         
         if (lobbyFrame != null) {
             lobbyFrame.setVisible(true);
-            lobbyFrame.showInfo("Trận đấu đã kết thúc. Chào mừng bạn quay lại sảnh chờ!");
         }
     }
 }

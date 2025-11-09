@@ -35,17 +35,16 @@ public class MatchDAO {
         return null;
     }
 
-    public void updateMatchEnd(int matchId, Integer winnerId, Integer loserId, int p1Score, int p2Score, Integer winnerTimeRemaining, Timestamp endTime) {
-        String sql = "UPDATE game_match SET winner_id=?, loser_id=?, player1_score=?, player2_score=?, winner_time_remaining=?, end_time=? WHERE match_id=?";
+    public void updateMatchEnd(int matchId, Integer winnerId, Integer loserId, int p1Score, int p2Score, Timestamp endTime) {
+        String sql = "UPDATE game_match SET winner_id=?, loser_id=?, player1_score=?, player2_score=?, end_time=? WHERE match_id=?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             if (winnerId == null) ps.setNull(1, java.sql.Types.INTEGER); else ps.setInt(1, winnerId);
             if (loserId == null) ps.setNull(2, java.sql.Types.INTEGER); else ps.setInt(2, loserId);
             ps.setInt(3, p1Score);
             ps.setInt(4, p2Score);
-            if (winnerTimeRemaining == null) ps.setNull(5, java.sql.Types.INTEGER); else ps.setInt(5, winnerTimeRemaining);
-            ps.setTimestamp(6, endTime);
-            ps.setInt(7, matchId);
+            ps.setTimestamp(5, endTime);
+            ps.setInt(6, matchId);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

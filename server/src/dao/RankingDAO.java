@@ -41,21 +41,14 @@ public class RankingDAO {
                 u.Username,
                 u.Score as total_score,
                 u.WinCount as won_matches,
-                u.MatchCount as total_matches,
-                ROUND(COALESCE(
-                    (SELECT AVG(m2.winner_time_remaining)
-                     FROM game_match m2
-                     WHERE m2.winner_id = u.ID
-                       AND m2.winner_time_remaining IS NOT NULL), 0
-                ), 2) as avg_time_remaining
+                u.MatchCount as total_matches
             FROM users u
             WHERE u.Blocked = 0
               AND u.MatchCount >= 0
               AND u.Name != 'Administrator'
             ORDER BY 
                 u.Score DESC,
-                u.WinCount DESC,
-                avg_time_remaining DESC
+                u.WinCount DESC
             LIMIT ?
         """;
         
@@ -73,7 +66,7 @@ public class RankingDAO {
                     rs.getInt("total_matches"),
                     rs.getInt("won_matches"),
                     rs.getInt("total_score"),
-                    rs.getDouble("avg_time_remaining")
+                    0.0  // Không sử dụng avg_time_remaining nữa
                 );
                 rankings.add(ranking);
             }
