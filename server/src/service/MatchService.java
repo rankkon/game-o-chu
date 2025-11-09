@@ -19,7 +19,8 @@ import controller.ClientHandler;
 /**
  * MatchService xử lý toàn bộ logic tạo phòng, bắt đầu trận đấu, chấm điểm và kết thúc.
  */
-public class MatchService {
+public class
+MatchService {
 
     // Danh sách phòng đang hoạt động
     private Map<String, MatchRoom> rooms = new ConcurrentHashMap<>();

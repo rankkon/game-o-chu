@@ -125,9 +125,6 @@ public class LobbyController implements SocketHandler.SocketListener {
             case "INVITE_REQUEST":
                 handleInviteRequest(data);
                 break;
-            case "INVITE_STATUS":
-                handleInviteStatus(data);
-                break;
             case "INVITE_RESPONSE":
                 handleInviteResponse(data);
                 break;
@@ -283,22 +280,6 @@ public class LobbyController implements SocketHandler.SocketListener {
         }
     }
 
-    private void handleInviteStatus(JsonObject data) {
-        String status = data.get("status").getAsString();
-        if (lobbyFrame != null) {
-            if ("sent".equals(status)) {
-                lobbyFrame.showInfo("Đã gửi lời mời.");
-            } else if ("accepted".equals(status)) {
-                lobbyFrame.showInfo("Đã chấp nhận lời mời.");
-            } else if ("rejected".equals(status)) {
-                lobbyFrame.showInfo("Đã từ chối lời mời.");
-            } else {
-                String msg = data.has("message") ? data.get("message").getAsString() : "Lỗi";
-                lobbyFrame.showError(msg);
-            }
-        }
-    }
-
     private void handleInviteResponse(JsonObject data) {
         boolean accepted = data.get("accepted").getAsBoolean();
         if (lobbyFrame != null) {
@@ -360,7 +341,6 @@ public class LobbyController implements SocketHandler.SocketListener {
         }
 
         if (lobbyFrame != null) {
-            lobbyFrame.showInfo("Kết thúc trận! Người thắng: " + winnerName);
             // Chỉ cần yêu cầu lại danh sách online; bảng xếp hạng đã được server broadcast
             requestOnlineUsers();
         }
