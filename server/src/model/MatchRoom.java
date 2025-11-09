@@ -77,6 +77,14 @@ public class MatchRoom {
             pd.put("score", ps.getScore());
             pd.put("correctWords", ps.getCorrectWords());
             pd.put("lastScoreAt", ps.getLastScoreAt());
+            
+            // Thêm thông tin người chơi nếu có
+            if (ps.getUser() != null) {
+                pd.put("name", ps.getUser().getName());
+                pd.put("avatar", ps.getUser().getAvatar());
+                pd.put("username", ps.getUser().getUsername());
+            }
+            
             playersDto.put(String.valueOf(uid), pd);
         }
         dto.put("players", playersDto);

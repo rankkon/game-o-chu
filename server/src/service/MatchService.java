@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.gson.JsonObject;
 import model.MatchRoom;
 import model.PlayerState;
+import model.User;
 import model.WordInstance;
 import util.JsonUtil;
 
@@ -81,8 +82,13 @@ MatchService {
 
     // Khởi tạo điểm và per-player copies of words (so each player has their own filled/wasTried state)
     room.setPlayers(new HashMap<Integer, PlayerState>());
-    PlayerState ps1 = new PlayerState();
-    PlayerState ps2 = new PlayerState();
+    
+    // Lấy thông tin user để đưa vào PlayerState
+    User creator = userService.getUserById(room.getCreatorId());
+    User opponent = userService.getUserById(room.getOpponentId());
+    
+    PlayerState ps1 = new PlayerState(creator);
+    PlayerState ps2 = new PlayerState(opponent);
     room.getPlayers().put(room.getCreatorId(), ps1);
     room.getPlayers().put(room.getOpponentId(), ps2);
 

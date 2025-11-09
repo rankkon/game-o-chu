@@ -10,6 +10,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel; // Import layout mới
 import javax.swing.JOptionPane;
@@ -82,6 +84,9 @@ public class GameFrame extends javax.swing.JFrame {
     private JPanel namePanel;
     private JPanel scorePanel;
     private JPanel chatInputPanel;
+    
+    // Label hiển thị chủ đề game
+    private JLabel lblTopicName;
     // --- KẾT THÚC BIẾN KHAI BÁO ---
 
 
@@ -113,6 +118,13 @@ public class GameFrame extends javax.swing.JFrame {
 
         // 1. boardPanel (Bên trái)
         boardPanel = new JPanel();
+        boardPanel.setLayout(new BorderLayout(10, 10));
+        
+        // Thêm label hiển thị chủ đề ở trên cùng
+        lblTopicName = new JLabel("Chờ bắt đầu trận đấu...", SwingConstants.CENTER);
+        lblTopicName.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
+        boardPanel.add(lblTopicName, BorderLayout.NORTH);
+        
         getContentPane().add(boardPanel, BorderLayout.CENTER);
 
         // 2. eastPanel (Bên phải, chứa info và chat)
@@ -130,26 +142,30 @@ public class GameFrame extends javax.swing.JFrame {
 
         jLabel2 = new JLabel("Người chơi");
 
-        // Panel con cho 2 avatar và chữ 'x'
+        // Panel con cho 2 avatar và chữ 'VS'
         playerPanel = new JPanel(new GridLayout(1, 3, 10, 0));
-        jLabel3 = new JLabel("Avt 1", SwingConstants.CENTER);
-        jLabel5 = new JLabel("x", SwingConstants.CENTER);
-        jLabel4 = new JLabel("Avt 2", SwingConstants.CENTER);
+        jLabel3 = new JLabel(); // Avatar 1 - sẽ load từ DB
+        jLabel3.setHorizontalAlignment(SwingConstants.CENTER);
+        jLabel3.setPreferredSize(new Dimension(50, 50));
+        jLabel5 = new JLabel("VS", SwingConstants.CENTER);
+        jLabel4 = new JLabel(); // Avatar 2 - sẽ load từ DB  
+        jLabel4.setHorizontalAlignment(SwingConstants.CENTER);
+        jLabel4.setPreferredSize(new Dimension(50, 50));
         playerPanel.add(jLabel3);
         playerPanel.add(jLabel5);
         playerPanel.add(jLabel4);
 
         // Panel con cho 2 tên
         namePanel = new JPanel(new GridLayout(1, 2, 10, 0));
-        lblName1 = new JLabel("tên 1", SwingConstants.CENTER);
-        lblName2 = new JLabel("tên 2", SwingConstants.CENTER);
+        lblName1 = new JLabel("Bạn", SwingConstants.CENTER); // Tên người chơi hiện tại
+        lblName2 = new JLabel("Đối thủ", SwingConstants.CENTER); // Tên đối thủ từ DB
         namePanel.add(lblName1);
         namePanel.add(lblName2);
         
         // Panel con cho 2 điểm
         scorePanel = new JPanel(new GridLayout(1, 2, 10, 0));
-        lblScore1 = new JLabel("score 1", SwingConstants.CENTER);
-        lblScore2 = new JLabel("score 2", SwingConstants.CENTER);
+        lblScore1 = new JLabel("0", SwingConstants.CENTER);
+        lblScore2 = new JLabel("0", SwingConstants.CENTER);
         scorePanel.add(lblScore1);
         scorePanel.add(lblScore2);
         
@@ -229,6 +245,13 @@ public class GameFrame extends javax.swing.JFrame {
         namePanel.setBackground(Theme.COLOR_BACKGROUND);
         scorePanel.setBackground(Theme.COLOR_BACKGROUND);
         chatInputPanel.setBackground(Theme.COLOR_BACKGROUND);
+        
+        // === Label Chủ Đề ===
+        lblTopicName.setFont(Theme.FONT_BUTTON_SMALL.deriveFont(Font.BOLD, 20f));
+        lblTopicName.setForeground(Theme.COLOR_PRIMARY);
+        lblTopicName.setBackground(Theme.COLOR_WHITE);
+        lblTopicName.setOpaque(true);
+        lblTopicName.setBorder(new Theme.RoundedBorder(Theme.COLOR_BORDER, 2, Theme.CORNER_RADIUS));
 
         // === Panel Thông Tin ===
         jLabel1.setFont(Theme.FONT_BUTTON_SMALL); 
@@ -253,8 +276,9 @@ public class GameFrame extends javax.swing.JFrame {
         jLabel2.setFont(Theme.FONT_BUTTON_SMALL); 
         jLabel2.setForeground(Theme.COLOR_PRIMARY);
         
-        jLabel3.setText("AV1"); // Tạm
-        jLabel4.setText("AV2"); // Tạm
+        // Load avatar mặc định
+        loadAvatar(jLabel3, "icons8_alien_96px.png");
+        loadAvatar(jLabel4, "icons8_alien_96px.png");
         jLabel5.setFont(Theme.FONT_LABEL); 
         jLabel5.setForeground(Theme.COLOR_TEXT_DARK);
 
@@ -361,6 +385,14 @@ public class GameFrame extends javax.swing.JFrame {
     public void loadMatchStart(JsonObject envelope) {
         this.roomId = envelope.has("roomId") ? envelope.get("roomId").getAsString() : this.roomId;
         JsonObject data = envelope.has("data") ? envelope.get("data").getAsJsonObject() : envelope;
+        
+        // Cập nhật tên chủ đề nếu có
+        if (data.has("categoryName")) {
+            setTopicName(data.get("categoryName").getAsString());
+        } else if (envelope.has("categoryName")) {
+            setTopicName(envelope.get("categoryName").getAsString());
+        }
+        
         renderWords(data);
         updateScores(data);
         updateTimer(data);
@@ -368,6 +400,14 @@ public class GameFrame extends javax.swing.JFrame {
 
     public void loadMatchUpdate(JsonObject envelope) {
         JsonObject data = envelope.has("data") ? envelope.get("data").getAsJsonObject() : envelope;
+        
+        // Cập nhật tên chủ đề nếu có
+        if (data.has("categoryName")) {
+            setTopicName(data.get("categoryName").getAsString());
+        } else if (envelope.has("categoryName")) {
+            setTopicName(envelope.get("categoryName").getAsString());
+        }
+        
         refreshFilled(data);
         updateScores(data);
         updateTimer(data);
@@ -376,6 +416,9 @@ public class GameFrame extends javax.swing.JFrame {
     private void renderWords(JsonObject data) {
         boardPanel.removeAll();
         wordInputs.clear();
+
+        // Thêm lại label chủ đề ở vị trí NORTH
+        boardPanel.add(lblTopicName, BorderLayout.NORTH);
 
         JsonArray words = data.getAsJsonArray("words");
         if (words == null || words.size() == 0) {
@@ -490,6 +533,9 @@ public class GameFrame extends javax.swing.JFrame {
     private void renderPlaceholderBoard() {
         boardPanel.removeAll();
         wordInputs.clear();
+
+        // Thêm lại label chủ đề ở vị trí NORTH
+        boardPanel.add(lblTopicName, BorderLayout.NORTH);
 
         javax.swing.JPanel wordsContainer = new javax.swing.JPanel();
         wordsContainer.setLayout(new java.awt.GridLayout(5, 1, 5, 5));
@@ -619,16 +665,25 @@ public class GameFrame extends javax.swing.JFrame {
         for (Map.Entry<String, JsonElement> e : players.entrySet()) {
             JsonObject ps = e.getValue().getAsJsonObject();
             int score = ps.has("score") ? ps.get("score").getAsInt() : 0;
+            String name = ps.has("name") ? ps.get("name").getAsString() : "Người chơi";
+            String avatar = ps.has("avatar") ? ps.get("avatar").getAsString() : "icons8_alien_96px.png";
+            
             try {
                 int uid = Integer.parseInt(e.getKey());
                 if (uid == selfUserId) {
+                    // Người chơi hiện tại - luôn hiển thị "Bạn"
                     lblScore1.setText("" + score);
                     lblScore1.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD, 16f)); 
                     lblScore1.setForeground(Theme.COLOR_PRIMARY);
+                    lblName1.setText("Bạn");
+                    loadAvatar(jLabel3, avatar); // Load avatar người chơi hiện tại
                 } else {
+                    // Đối thủ - hiển thị tên thật và avatar từ DB
                     lblScore2.setText("" + score);
                     lblScore2.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD, 16f)); 
                     lblScore2.setForeground(Theme.COLOR_PRIMARY);
+                    lblName2.setText(name); // Tên thật từ DB
+                    loadAvatar(jLabel4, avatar); // Avatar từ DB
                 }
             } catch (NumberFormatException ignored) {}
         }
@@ -724,8 +779,50 @@ public class GameFrame extends javax.swing.JFrame {
     }
 
     public void setPlayerNames(String name1, String name2) {
-        lblName1.setText(name1);
-        lblName2.setText(name2);
+        lblName1.setText("Bạn"); // Luôn hiển thị "Bạn" cho người chơi hiện tại
+        lblName2.setText(name2); // Hiển thị tên thật của đối thủ
+    }
+    
+    public void setTopicName(String topicName) {
+        if (topicName != null && !topicName.trim().isEmpty()) {
+            lblTopicName.setText("Chủ đề: " + topicName.trim());
+        } else {
+            lblTopicName.setText("Chủ đề: Không xác định");
+        }
+    }
+    
+    private void loadAvatar(JLabel avatarLabel, String avatarFileName) {
+        // Sử dụng avatar mặc định nếu không có tên file
+        if (avatarFileName == null || avatarFileName.isEmpty()) {
+            avatarFileName = "icons8_alien_96px.png";
+        }
+        
+        try {
+            // Đường dẫn tới thư mục avatar
+            String avatarPath = "client/asset/avatar/" + avatarFileName;
+            java.io.File avatarFile = new java.io.File(avatarPath);
+            
+            if (avatarFile.exists()) {
+                ImageIcon icon = new ImageIcon(avatarPath);
+                Image img = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+                avatarLabel.setIcon(new ImageIcon(img));
+                avatarLabel.setText("");
+            } else {
+                // Nếu không tìm thấy file, dùng avatar mặc định
+                String defaultPath = "client/asset/avatar/icons8_alien_96px.png";
+                java.io.File defaultFile = new java.io.File(defaultPath);
+                if (defaultFile.exists()) {
+                    ImageIcon icon = new ImageIcon(defaultPath);
+                    Image img = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+                    avatarLabel.setIcon(new ImageIcon(img));
+                    avatarLabel.setText("");
+                }
+            }
+        } catch (Exception e) {
+            // Không hiển thị text lỗi, chỉ để trống
+            avatarLabel.setIcon(null);
+            avatarLabel.setText("");
+        }
     }
 
     public void receiveChatMessage(String senderName, String message) {
@@ -739,8 +836,15 @@ public class GameFrame extends javax.swing.JFrame {
     }
 
     public void clearBoard() {
+        // Reset chủ đề về trạng thái chờ
+        lblTopicName.setText("Chờ bắt đầu trận đấu...");
+        
         boardPanel.removeAll();
         wordInputs.clear();
+        
+        // Thêm lại label chủ đề vào vị trí NORTH
+        boardPanel.add(lblTopicName, BorderLayout.NORTH);
+        
         boardPanel.revalidate();
         boardPanel.repaint();
         stopCountdown();

@@ -292,6 +292,7 @@ public class LobbyController implements SocketHandler.SocketListener {
             lobbyFrame.setMatchmakingStatus(false);
         }
         JsonObject gameData = data.has("data") ? data.get("data").getAsJsonObject() : data;
+        
         if (gameFrame == null) {
             gameFrame = new view.GameFrame();
             gameFrame.setSelfUserId(currentUser.getId());
