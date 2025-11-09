@@ -39,7 +39,6 @@ public class RankingController {
             rankObj.addProperty("wonMatches", rank.getWonMatches());
             rankObj.addProperty("totalScore", rank.getTotalScore());
             rankObj.addProperty("winRate", rank.getWinRate());
-            rankObj.addProperty("avgTimeRemaining", rank.getAvgTimeRemaining());
             rankingsArray.add(rankObj);
         }
 

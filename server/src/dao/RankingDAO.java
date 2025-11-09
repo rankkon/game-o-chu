@@ -41,14 +41,19 @@ public class RankingDAO {
                 u.Username,
                 u.Score as total_score,
                 u.WinCount as won_matches,
-                u.MatchCount as total_matches
+                u.MatchCount as total_matches,
+                CASE 
+                    WHEN u.MatchCount > 0 THEN (u.WinCount * 100.0 / u.MatchCount)
+                    ELSE 0.0 
+                END as win_rate
             FROM users u
             WHERE u.Blocked = 0
               AND u.MatchCount >= 0
               AND u.Name != 'Administrator'
             ORDER BY 
                 u.Score DESC,
-                u.WinCount DESC
+                u.WinCount DESC,
+                win_rate DESC
             LIMIT ?
         """;
         
@@ -66,7 +71,7 @@ public class RankingDAO {
                     rs.getInt("total_matches"),
                     rs.getInt("won_matches"),
                     rs.getInt("total_score"),
-                    0.0  // Không sử dụng avg_time_remaining nữa
+                    0.0  // avgTimeRemaining không sử dụng nữa, winRate sẽ được tính trong constructor
                 );
                 rankings.add(ranking);
             }
