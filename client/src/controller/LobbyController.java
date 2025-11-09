@@ -555,7 +555,7 @@ public class LobbyController implements SocketHandler.SocketListener {
                         rankObj.get("totalMatches").getAsInt(),
                         rankObj.get("wonMatches").getAsInt(),
                         rankObj.get("totalScore").getAsInt(),
-                        rankObj.has("avgTimeRemaining") ? rankObj.get("avgTimeRemaining").getAsDouble() : 0.0
+                        0.0  // Không sử dụng avgTimeRemaining nữa
                     );
                     rankings.add(ranking);
                 } catch (Exception e) {

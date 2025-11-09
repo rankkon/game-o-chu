@@ -31,7 +31,7 @@ public class RankingPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final DecimalFormat df = new DecimalFormat("#.##");
     private final String[] columnNames = {
-        "Hạng", "Tên người chơi", "Tổng điểm", "Số trận thắng", "Tổng số trận", "Tỷ lệ thắng", "Thời gian TB còn lại"
+        "Hạng", "Tên người chơi", "Tổng điểm", "Số trận thắng", "Tổng số trận", "Tỷ lệ thắng"
     };
 
     // --- Biến cho panel thông tin user ---
@@ -93,7 +93,7 @@ public class RankingPanel extends JPanel {
         rankingTable.setSelectionForeground(Theme.COLOR_TEXT_DARK);
         rankingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rankingTable.setAutoCreateRowSorter(true);
-        int[] columnWidths = {60, 200, 100, 100, 100, 100, 150};
+        int[] columnWidths = {60, 200, 100, 100, 100, 100};
         for (int i = 0; i < columnWidths.length; i++) {
             rankingTable.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
         }
@@ -219,8 +219,7 @@ public class RankingPanel extends JPanel {
                 String.format("%,d", rank.getTotalScore()),
                 String.format("%,d", rank.getWonMatches()),
                 String.format("%,d", rank.getTotalMatches()),
-                df.format(winRate) + "%",
-                df.format(rank.getAvgTimeRemaining()) + "s"
+                df.format(winRate) + "%"
             });
         }
         
