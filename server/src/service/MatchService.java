@@ -417,6 +417,69 @@ MatchService {
         String json = JsonUtil.toJson(payload);
         userService.sendToUser(room.getCreatorId(), json);
         userService.sendToUser(room.getOpponentId(), json);
+        
+        // Sau khi gửi kết quả, hỏi cả 2 người có muốn chơi tiếp không
+        askContinueMatch(roomId, room.getCreatorId(), room.getOpponentId());
+    }
+    
+    // Thêm Map để lưu trạng thái chơi tiếp
+    private final Map<String, Map<Integer, Boolean>> continueResponses = new ConcurrentHashMap<>();
+    
+    private void askContinueMatch(String roomId, int player1Id, int player2Id) {
+        // Khởi tạo trạng thái phản hồi
+        continueResponses.put(roomId, new ConcurrentHashMap<>());
+        
+        // Gửi thông báo hỏi chơi tiếp cho cả 2 người
+        Map<String, Object> askPayload = new HashMap<>();
+        askPayload.put("action", "ask_continue");
+        askPayload.put("roomId", roomId);
+        String askJson = JsonUtil.toJson(askPayload);
+        
+        userService.sendToUser(player1Id, askJson);
+        userService.sendToUser(player2Id, askJson);
+    }
+    
+    public void handleContinueResponse(String roomId, int playerId, boolean wantsContinue) {
+        Map<Integer, Boolean> responses = continueResponses.get(roomId);
+        if (responses == null) return;
+        
+        responses.put(playerId, wantsContinue);
+        
+        // Kiểm tra xem đã có đủ 2 phản hồi chưa
+        MatchRoom room = rooms.get(roomId);
+        if (room == null) return;
+        
+        Boolean player1Response = responses.get(room.getCreatorId());
+        Boolean player2Response = responses.get(room.getOpponentId());
+        
+        if (player1Response != null && player2Response != null) {
+            // Đã có đủ phản hồi từ cả 2 người
+            continueResponses.remove(roomId);
+            
+            if (player1Response && player2Response) {
+                // Cả 2 đều muốn chơi tiếp - tạo ván mới
+                startNewMatch(room.getCreatorId(), room.getOpponentId());
+            } else {
+                // Ít nhất 1 người từ chối - về sảnh chờ
+                endAndReturnToLobby(room.getCreatorId(), room.getOpponentId());
+            }
+        }
+    }
+    
+    private void startNewMatch(int player1Id, int player2Id) {
+        // Tạo room mới và bắt đầu trận đấu
+        MatchRoom newRoom = createRoom(player1Id);
+        startMatch(newRoom.getRoomId(), player2Id);
+    }
+    
+    private void endAndReturnToLobby(int player1Id, int player2Id) {
+        // Gửi thông báo về sảnh chờ
+        Map<String, Object> endPayload = new HashMap<>();
+        endPayload.put("action", "return_to_lobby");
+        String endJson = JsonUtil.toJson(endPayload);
+        
+        userService.sendToUser(player1Id, endJson);
+        userService.sendToUser(player2Id, endJson);
     }
 
     public boolean roomExists(String roomId) {

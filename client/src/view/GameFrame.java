@@ -49,6 +49,7 @@ public class GameFrame extends javax.swing.JFrame {
     // Game state variables
     private String roomId = "";
     private int selfUserId = 0;
+    private int opponentUserId = 0; // Lưu ID của đối thủ
     private SocketHandler socketHandler;
     private final List<List<JTextField>> wordInputs = new ArrayList<>();
     // Countdown timer fields
@@ -60,6 +61,7 @@ public class GameFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnSend;
     private javax.swing.JPanel chatPanel;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton btnRematch; // Nút tái đấu
     private javax.swing.JPanel infoPanel;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -144,6 +146,9 @@ public class GameFrame extends javax.swing.JFrame {
         jLabel1 = new JLabel("Chức năng");
         jButton1 = new JButton("Thoát phòng");
         jButton1.addActionListener(this::jButton1ActionPerformed); // Gán sự kiện
+        
+        btnRematch = new JButton("Tái đấu");
+        btnRematch.addActionListener(this::btnRematchActionPerformed); // Gán sự kiện
 
         jLabel2 = new JLabel("Người chơi");
 
@@ -177,10 +182,14 @@ public class GameFrame extends javax.swing.JFrame {
         jLabel6 = new JLabel("Thời gian");
         jLabel7 = new JLabel("00:00");
 
+        // Tạo panel cho 1 nút (bỏ nút tái đấu vì server sẽ tự động hỏi)
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 1, 5, 0));
+        buttonPanel.add(jButton1); // Chỉ còn nút "Thoát phòng"
+        
         // Thêm các thành phần vào infoPanel (với các khoảng đệm)
         infoPanel.add(jLabel1);
         infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        infoPanel.add(jButton1);
+        infoPanel.add(buttonPanel); // Panel chỉ chứa 1 nút
         infoPanel.add(Box.createRigidArea(new Dimension(0, 20)));
         infoPanel.add(jLabel2);
         infoPanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -278,6 +287,23 @@ public class GameFrame extends javax.swing.JFrame {
             }
         });
 
+        // Style cho nút Tái đấu
+        Theme.styleButtonPrimary(btnRematch);
+        Color rematchButtonColor = new Color(40, 167, 69); // Màu xanh lá
+        btnRematch.setBackground(rematchButtonColor);
+        btnRematch.setUI(new Theme.RoundedButtonUI()); 
+        ((Theme.RoundedBorder)btnRematch.getBorder()).setColor(rematchButtonColor);
+        btnRematch.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnRematch.setBackground(rematchButtonColor.darker());
+                btnRematch.repaint();
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnRematch.setBackground(rematchButtonColor);
+                btnRematch.repaint();
+            }
+        });
+
         jLabel2.setFont(Theme.FONT_BUTTON_SMALL); 
         jLabel2.setForeground(Theme.COLOR_PRIMARY);
         
@@ -343,6 +369,21 @@ public class GameFrame extends javax.swing.JFrame {
             setVisible(false);
         }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void btnRematchActionPerformed(java.awt.event.ActionEvent evt) {
+        // Gửi yêu cầu tái đấu sử dụng logic mời đấu
+        if (socketHandler != null) {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("targetUserId", getOpponentId()); // Lấy ID đối thủ
+            payload.addProperty("isRematch", true); // Flag để phân biệt tái đấu
+            socketHandler.sendMessage("INVITE_SEND", payload);
+            
+            JOptionPane.showMessageDialog(this, 
+                "Đã gửi yêu cầu tái đấu đến đối thủ!", 
+                "Tái đấu", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
 
     private void txtMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMessageActionPerformed
         sendChatMessage();
@@ -697,6 +738,7 @@ public class GameFrame extends javax.swing.JFrame {
                     loadAvatar(jLabel3, avatar); // Load avatar người chơi hiện tại
                 } else {
                     // Đối thủ - hiển thị tên thật và avatar từ DB
+                    opponentUserId = uid; // Lưu ID đối thủ
                     lblScore2.setText("" + score);
                     lblScore2.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD, 16f)); 
                     lblScore2.setForeground(Theme.COLOR_PRIMARY);
@@ -833,6 +875,37 @@ public class GameFrame extends javax.swing.JFrame {
 
     public void setSelfUserId(int userId) {
         this.selfUserId = userId;
+    }
+    
+    private int getOpponentId() {
+        return opponentUserId;
+    }
+    
+    private void showGameResultDialog() {
+        // Xác định người thắng dựa trên điểm số
+        String winner = "";
+        String myScoreText = lblScore1.getText();
+        String opponentScoreText = lblScore2.getText();
+        
+        try {
+            int myScore = Integer.parseInt(myScoreText);
+            int opponentScore = Integer.parseInt(opponentScoreText);
+            
+            if (myScore > opponentScore) {
+                winner = "Chúc mừng! Bạn đã thắng!";
+            } else if (opponentScore > myScore) {
+                winner = "Đối thủ đã thắng!";
+            } else {
+                winner = "Hòa!";
+            }
+        } catch (NumberFormatException e) {
+            winner = "Trận đấu đã kết thúc!";
+        }
+        
+        // Hiển thị kết quả trên label thay vì dialog
+        jLabel6.setText(winner);
+        jLabel6.setFont(Theme.FONT_INPUT.deriveFont(Font.BOLD, 16f));
+        jLabel6.setForeground(new Color(220, 53, 69)); // Màu đỏ để nổi bật
     }
 
     public void setSocketHandler(SocketHandler socketHandler) {

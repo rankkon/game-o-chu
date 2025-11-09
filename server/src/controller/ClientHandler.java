@@ -115,6 +115,9 @@ public class ClientHandler implements Runnable {
                 case "REQUEST_EXIT_MATCH":
                     handleRequestExitMatch(json);
                     break;
+                case "CONTINUE_RESPONSE":
+                    handleContinueResponse(json);
+                    break;
                 default:
                     sendError("Unknown request type: " + type);
                     break;
@@ -510,5 +513,11 @@ public class ClientHandler implements Runnable {
      */
     public void sendMessage(String message) {
         out.println(message);
+    }
+    
+    private void handleContinueResponse(JsonObject json) {
+        String roomId = json.get("roomId").getAsString();
+        boolean wantsContinue = json.get("wantsContinue").getAsBoolean();
+        matchService.handleContinueResponse(roomId, currentUser.getId(), wantsContinue);
     }
 }

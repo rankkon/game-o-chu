@@ -160,6 +160,12 @@ public class LobbyController implements SocketHandler.SocketListener {
             case "EXIT_MATCH_ACK":
                 handleExitMatchAck(data);
                 break;
+            case "ask_continue":
+                handleAskContinue(data);
+                break;
+            case "return_to_lobby":
+                handleReturnToLobby(data);
+                break;
         }
     }
     
@@ -344,16 +350,7 @@ public class LobbyController implements SocketHandler.SocketListener {
         if (lobbyFrame != null) {
             // Chỉ cần yêu cầu lại danh sách online; bảng xếp hạng đã được server broadcast
             requestOnlineUsers();
-        }
-        if (gameFrame != null) {
-            // Show result in GameFrame before closing
-            JOptionPane.showMessageDialog(gameFrame, 
-                "Kết thúc trận! Người thắng: " + winnerName, 
-                "Kết quả trận đấu", 
-                JOptionPane.INFORMATION_MESSAGE);
-            gameFrame.dispose();
-            gameFrame = null;
-        }
+        }  
     }
 
     private void handleChatMessage(JsonObject data) {
@@ -560,6 +557,40 @@ public class LobbyController implements SocketHandler.SocketListener {
             }
             
             lobbyFrame.updateRankings(rankings);
+        }
+    }
+    
+    private void handleAskContinue(JsonObject data) {
+        String roomId = data.get("roomId").getAsString();
+        
+        if (gameFrame != null && gameFrame.isVisible()) {
+            // Hiển thị dialog hỏi có muốn chơi tiếp không
+            int choice = JOptionPane.showConfirmDialog(
+                gameFrame,
+                "Bạn có muốn chơi tiếp với đối thủ này không?",
+                "Chơi tiếp?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+            
+            // Gửi phản hồi về server
+            JsonObject response = new JsonObject();
+            response.addProperty("roomId", roomId);
+            response.addProperty("wantsContinue", choice == JOptionPane.YES_OPTION);
+            socketHandler.sendMessage("CONTINUE_RESPONSE", response);
+        }
+    }
+    
+    private void handleReturnToLobby(JsonObject data) {
+        // Đóng GameFrame và hiển thị LobbyFrame
+        if (gameFrame != null) {
+            gameFrame.dispose();
+            gameFrame = null;
+        }
+        
+        if (lobbyFrame != null) {
+            lobbyFrame.setVisible(true);
+            lobbyFrame.showInfo("Trận đấu đã kết thúc. Chào mừng bạn quay lại sảnh chờ!");
         }
     }
 }
